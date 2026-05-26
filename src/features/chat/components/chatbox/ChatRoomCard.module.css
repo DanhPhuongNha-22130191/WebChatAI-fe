@@ -1,0 +1,506 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    /* background-color: #fff; */
+    background-color: transparent;
+    border-radius: 12px;
+    overflow: hidden;
+    /* box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); */
+    font-family: 'Inter', sans-serif;
+    position: relative;
+}
+
+.header {
+    height: 70px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    background-color: var(--theme-header-bg, #FF5596);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    /* Viền mờ nhẹ */
+    color: var(--theme-text-on-primary, white);
+    z-index: 10;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.avatarContainer {
+    position: relative;
+}
+
+.avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    /* border: 2px solid white; */
+}
+
+.onlineDot {
+    position: absolute;
+    bottom: 5px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    background-color: #4cd964;
+    border: 2px solid #fff;
+    border-radius: 50%;
+}
+
+.offlineDot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    background-color: #ccc;
+    border: 2px solid #fff;
+    border-radius: 50%;
+}
+
+.headerInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--theme-text-on-primary, white);
+    text-shadow: none;
+}
+
+.subtitle {
+    margin: 2px 0 0 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.headerRight {
+    display: flex;
+    gap: 10px;
+}
+
+.iconButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--theme-text-on-primary, white);
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.iconButton:hover {
+    background-color: #fff0f5;
+}
+
+/* Khu vực tin nhắn */
+.messagesArea {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    /* background-color: #f8f9fa; */
+    background-color: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    /* Scroll behavior */
+    scroll-behavior: auto;
+    /* Mặc định auto để tránh smooth scroll khi load more */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+}
+
+.messagesArea::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Opera */
+}
+
+.messageRow {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.centerTimestamp {
+    align-self: center;
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #fff;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    /* background-color: #ccc; */
+    margin-bottom: 10px;
+    backdrop-filter: blur(4px);
+}
+
+.messageContent {
+    display: flex;
+    gap: 10px;
+    max-width: 70%;
+}
+
+/* Đảo ngược tin nhắn của mình qua phải */
+.messageRow .messageContent[style*="row-reverse"] {
+    align-self: flex-end;
+}
+
+.smallAvatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.senderName {
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.bubble {
+    padding: 10px 14px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.4;
+    word-break: break-word;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.isMe .bubble {
+    background-color: var(--theme-sender-bubble, #FF5596);
+    color: var(--theme-text-on-primary, #fff);
+    border-bottom-right-radius: 4px;
+}
+
+.isOther .bubble {
+    background-color: rgba(255, 255, 255, 0.85);
+    color: #333;
+    border-bottom-left-radius: 4px;
+    backdrop-filter: blur(4px);
+}
+
+/* Khu vực Input */
+.inputArea {
+    padding: 15px 20px;
+    /* background-color: #fff; */
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Input area trong suốt nhẹ */
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+    position: relative;
+    /* Ensure z-index context if needed */
+}
+
+.inputContainer {
+    flex: 1;
+    background-color: rgba(255, 255, 255, 0.6);
+    /* Ô nhập liệu mờ */
+    border-radius: 20px;
+    padding: 6px 15px;
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    transition: all 0.2s;
+}
+
+.inputContainer:focus-within {
+    border-color: var(--theme-primary, #FF5596);
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 2px var(--theme-shadow, rgba(255, 85, 150, 0.1));
+}
+
+.input {
+    flex: 1;
+    border: none;
+    background: none;
+    outline: none;
+    font-size: 15px;
+    color: #333;
+    padding: 5px 0;
+}
+
+.actionButton {
+    background: none !important;
+    border: none !important;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8e939d;
+    /* Màu mặc định nhẹ nhàng */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    outline: none !important;
+}
+
+.actionButton:hover,
+.actionButton.active {
+    color: var(--theme-header-bg, #FF5596);
+    background-color: rgba(0, 0, 0, 0.04);
+    transform: scale(1.05);
+}
+
+.actionButton.active {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.sendButton {
+    background-color: var(--theme-header-bg, #FF5596);
+    border: none;
+    cursor: pointer;
+    color: var(--theme-text-on-primary, white);
+    padding: 0;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.sendButton:hover {
+    background-color: var(--theme-header-bg, #FF5596);
+    filter: brightness(1.05);
+    transform: scale(1.05);
+}
+
+.sendButton svg {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px;
+    min-height: 24px;
+}
+
+.sendButton:active {
+    transform: scale(0.95);
+}
+
+.sendButton:disabled {
+    background-color: #ccc;
+    cursor: default;
+}
+
+.loader {
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+    padding: 5px 0;
+}
+
+/* New Styles for Multimedia */
+
+.previewContainer {
+    position: absolute;
+    bottom: 100%;
+    /* Hiển thị ngay trên ô input */
+    left: 20px;
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+}
+
+.previewContent {
+    position: relative;
+}
+
+.previewImage {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #b8b8b8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.previewFileIcon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid var(--theme-header-bg, #FF5596);
+    color: #666;
+}
+
+.removeFileButton {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #666;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    z-index: 100;
+}
+
+.removeFileButton:hover {
+    background-color: #f5f5f5;
+    color: #FF4D4F;
+}
+
+.uploadingOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.loadingOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(74, 62, 68, 0.57);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+}
+
+.loadingContent {
+    z-index: 101;
+}
+
+.emojiPickerWrapper {
+    position: absolute;
+    bottom: 80px;
+    left: 20px;
+    z-index: 100;
+}
+
+.emojiPickerWrapper :global(.EmojiPickerReact) {
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid var(--theme-header-bg, #FF5596) !important;
+    font-family: 'Inter',
+        sans-serif !important;
+}
+
+.emojiPickerWrapper :global(.epr-header) {
+    order: 1 !important;
+
+}
+
+.emojiPickerWrapper :global(.epr-body) {
+    order: 2 !important;
+    scrollbar-width: none !important;
+}
+
+.emojiPickerWrapper :global(.epr-body)::-webkit-scrollbar {
+    display: none !important;
+}
+
+.emojiPickerWrapper :global(.epr-category-nav) {
+    order: 3 !important;
+    border-top: 1px solid #f0f0f0 !important;
+    border-bottom: none !important;
+    padding: 4px 0 !important;
+}
+
+.emojiPickerWrapper :global(.epr-emoji:active),
+.emojiPickerWrapper :global(.epr-emoji:focus),
+.emojiPickerWrapper :global(.epr-category-nav > button:active),
+.emojiPickerWrapper :global(.epr-category-nav > button:focus) {
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+}
+
+.emojiPickerWrapper :global(.epr-emoji:hover) {
+    background-color: transparent !important;
+}
+
+.emojiPickerWrapper :global(.epr-search-container) {
+    margin-bottom: 0 !important;
+}
+
+.emojiOnly {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    font-size: 40px !important;
+    line-height: normal;
+}
+
+.stickerPickerWrapper {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    z-index: 100;
+}
+
+.stickerImage {
+    max-width: 100px;
+    border-radius: 8px;
+    cursor: pointer;
+    object-fit: contain;
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255, 85, 150, 0.3);
+    border-top: 3px solid var(--theme-header-bg, #FF5596);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}

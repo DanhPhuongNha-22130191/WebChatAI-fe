@@ -1,0 +1,19 @@
+:root {
+    --gradient-start: #FFB2CD;
+    --gradient-end: #FF5BCB;
+
+    --card-bg: #FFDAEB;
+    --card-border: #D26868;
+    --card-shadow: rgba(0,0,0,0.15);
+
+    --text-primary: #7A003C;
+    --text-normal: #000000;
+    --text-error: #b00020;
+
+    --btn-primary: #7A003C;
+    --btn-disabled: #ccc;
+
+    --chat-header-bg: #FF5596;
+    --chat-sender-bg: #FF5596;
+    --chat-receiver-bg: #FFFFFF;
+}

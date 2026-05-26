@@ -1,0 +1,101 @@
+@property --angle {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+.roomCardWrapper {
+    position: relative;
+    margin: 8px 16px;
+    border-radius: 16px;
+    --angle: 0deg;
+
+    --border-base: #ffeef5;
+    --wave: #ffb3d9;
+}
+
+.roomCardInner {
+    position: relative;
+    z-index: 1;
+    border-radius: inherit;
+    overflow: hidden;
+    transition: background 0.3s ease;
+}
+
+.roomCardWrapper:hover .roomCardInner,
+.roomCardWrapper:active .roomCardInner,
+.roomCardWrapper.active .roomCardInner {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 209, 234, 0.4) 20%, rgba(253, 136, 195, 0.3) 40%) !important;
+}
+
+.roomCardWrapper:hover .roomCardInner > *,
+.roomCardWrapper:active .roomCardInner > *,
+.roomCardWrapper.active .roomCardInner > * {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 209, 234, 0.35) 40%, rgba(253, 136, 195, 0.25) 80%) !important;
+}
+
+.sparkleContainer {
+    position: absolute;
+    top: 50%;
+    right: -4px;
+    transform: translateY(-30%);
+    width: 60px;
+    height: 60px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+}
+
+.sparkle {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.roomCardWrapper:hover .sparkleContainer,
+.roomCardWrapper:active .sparkleContainer,
+.roomCardWrapper.active .sparkleContainer {
+    opacity: 1;
+}
+
+.roomCardWrapper::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    
+    background: conic-gradient(
+        from var(--angle),
+        var(--border-base) 0deg,
+        var(--wave) 45deg,
+        var(--border-base) 90deg,
+        var(--border-base) 180deg,
+        var(--wave) 225deg,
+        var(--border-base) 270deg,
+        var(--border-base) 360deg
+    );
+
+    opacity: 0;
+    pointer-events: none;
+    padding: 2px;
+
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+/* Hover + Active */
+.roomCardWrapper:hover::before,
+.roomCardWrapper:active::before,
+.roomCardWrapper.active::before {
+    opacity: 1;
+    animation: roomCardSpin 4s linear infinite;
+    filter: drop-shadow(0 0 6px rgba(255, 179, 217, 0.4));
+}
+
+@keyframes roomCardSpin {
+    to { --angle: 360deg; }
+}
