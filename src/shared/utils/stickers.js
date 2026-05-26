@@ -1,0 +1,111 @@
+export const STICKER_COLLECTIONS = [
+    {
+        id: 'Rabbit',
+        name: 'Cute Rabbits',
+        icon: 'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3cHkzejJya21jZXd6cHp3cmFmdGpsdXdrb2tzZXZ2bXZvbWQ3cGg3YyZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/KLkzRDYS5PrytTKJOd/giphy.gif',
+        stickers: [
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3cHkzejJya21jZXd6cHp3cmFmdGpsdXdrb2tzZXZ2bXZvbWQ3cGg3YyZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/KLkzRDYS5PrytTKJOd/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3amF4d3g3cTNqZ3BlY2NiaDc5N3Rsdm5uNmNnbXRhN2dkY2N4eDkyOCZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/JUYq5NxeUHELWCHTAG/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3cW4ybzA2cDV1NzZ0bWxiNHZjNW80N3k3djNnczhzcXgwcW5vY2dxYiZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/i9nEybI7iyxGzpuwgC/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3cW4ybzA2cDV1NzZ0bWxiNHZjNW80N3k3djNnczhzcXgwcW5vY2dxYiZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/bt8LsImvKvWyOsd2Mp/giphy.gif',
+            'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExZmR2dW16aWt0OTZ3aW50N21vbnRpdGtoYmNnbzRvbzg2MTQ3c2gxZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/i8PhxrKCikS2JPYbNM/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3NnF1enRrcXB1bWxmbmNvZGFtNDdkdXFwZWIzeG1zbGJmZG03NmgzeSZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/TdlQ5VA2mivLmjxwxm/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3NnF1enRrcXB1bWxmbmNvZGFtNDdkdXFwZWIzeG1zbGJmZG03NmgzeSZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/SVTnmnKu1td4YUx9P7/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3ZmMxN3NjZnZqb2ppc2ZjMnlwZjAwNTNpOG1qaW91Z2liZXVzemhudCZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/YmnVexW2HpdBuDilJi/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3cHkzejJya21jZXd6cHp3cmFmdGpsdXdrb2tzZXZ2bXZvbWQ3cGg3YyZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/fO7dAMrfauTFm9Kfuw/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dzU0cnFxcWY4ano0aW94aXB2MGl5eDN1dGZkMXowNHZkbzU2cXN1YSZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/JsDxiZd4RNwS7Hchqq/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dzU0cnFxcWY4ano0aW94aXB2MGl5eDN1dGZkMXowNHZkbzU2cXN1YSZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/5gPVTjlgnI2Dvbpiy5/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dzU0cnFxcWY4ano0aW94aXB2MGl5eDN1dGZkMXowNHZkbzU2cXN1YSZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/UkG5fBzFIzXtt1OPKr/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3Z3U2dmt1czhiOHRta3lsZGhhbnZyNHkwNWlucGdnanR3cDJpdmE0cyZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/WLpo1H6488lHJaGesO/giphy.gif',
+        ]
+    },
+    {
+        id: 'CatMew',
+        name: 'Cat Mew',
+        icon: 'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3bTl6aHljaHR5a25tY2pjNTNsOWVucm5mNXhtaGlzcWN6YW1hYmF3YiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/8Wc02KA7SQPO6hfde0/giphy.gif',
+        stickers: [
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3MjhjZnN6amI2cjdkeTVnbzhrOXptcWtkdnYyZWM1cXRjeDh2MDhmOSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/7JJT5EWjhqUnK/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3c21zdGJwZzZzdXN6NTh6anhvMWd6b280Yjd4dWE3OGFmZ3g5YmpwZiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/xivhr4J3BWnHP6qnqW/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3c3hjd25rMDVnMGpjbTgxamQyeDR2cmFmbTE2NW14andkNTRleDJydyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/eWijZ9IwoIUJNPOo9E/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3ZTgydWw5dHFyNWhkY2tlc2JrajUyYThpeHBkM3kxOWRweTVnNndrNSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/1Gl7sFoJssmTnX74BE/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3cjBhaDRobjZpbHpucWQzZzNqN2R5cG9mMzMwOHZydDltZmxhcXlrayZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/YTU8FmRxr8kSpkQoZC/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3bTl6aHljaHR5a25tY2pjNTNsOWVucm5mNXhtaGlzcWN6YW1hYmF3YiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/8Wc02KA7SQPO6hfde0/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3eWxja3ZmYnhyMDBtZmt4cWY4OXEycmNkaWxjaDl3bG52a3dhbnowaiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3XlwRqGrWtJ0MIEfIp/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3eWxja3ZmYnhyMDBtZmt4cWY4OXEycmNkaWxjaDl3bG52a3dhbnowaiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/GSRMQJnCgKIQTVtz8k/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3eG1jemp3eDAzZWN4NWJqNGJxZmFoajgxbHBhYndpeGExYjlzYTdzbiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/lOaMPfXXuaw5PRSDZv/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3eWxja3ZmYnhyMDBtZmt4cWY4OXEycmNkaWxjaDl3bG52a3dhbnowaiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3eZRwwX91t7xSaNkaE/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3MHZneGZoenVvY2M1ODMxdHc3dWJ0azdvMWxhd2tlb3UzbmhqOTdqcCZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/puiJGJ5TuGQcRenHji/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3MHZneGZoenVvY2M1ODMxdHc3dWJ0azdvMWxhd2tlb3UzbmhqOTdqcCZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/dzQ3eSI5SpeHsJ06rW/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3Z2xmbW52cnQzZDZlOWRjbTNycWpvM3l5MTR6MHJxNW10YXJ3dnRwNSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/0bW6yseaFOR0i4evMs/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dHI0cmhwZHJuM2VmZ3p2bWp5eWQwM2l5Y241NDA3aTBoOWJydzBiayZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/EDwWNb4ZO0yhqqwF7K/giphy.gif',
+        ]
+    },
+    {
+        id: 'TontonFriends',
+        name: 'Tonton Friends',
+        icon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/8XwtXLnEKbaBwm25Bt/giphy.gif',
+        stickers: [
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/8XwtXLnEKbaBwm25Bt/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/QigYdnKB0BL0dvh9Xu/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/SUKgDKs5giKUbnAYhz/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/ti9NpWrrQ4P6FNSKKi/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/hnz3zADAKnH5SFhkfJ/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/wMlcT3exSxYAcbkby6/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/fQlRXyM9ckd6v5rmHy/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/5aY6weoALCAu1qHXpq/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/URjeETSOua8XfHrZE9/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/bKyQb654tHDq72daXJ/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3YnlvZnlhaThkMzY1N3Z0bnZsZmxyd2lrbWQwaG14dnlzeTRsaGptaSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/PAVwUFBg0jG6CQHfKV/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnNjZXR0MHNleDNqa2c1bXlya3k0bmZpbGJzMmhxaHBtNWw4YW5pbyZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/W4RizlO6qZWQRYw9mb/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3YnlvZnlhaThkMzY1N3Z0bnZsZmxyd2lrbWQwaG14dnlzeTRsaGptaSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/3i4g2nMtIXT9Y0sUUz/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3YnlvZnlhaThkMzY1N3Z0bnZsZmxyd2lrbWQwaG14dnlzeTRsaGptaSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/e1Rsb25X53NmhkYmBl/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3azl3Y3czMTRvcDk1aG5yMDBxdXpudTRwZHE5cTR4anhya2U2NWx3NiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/HWeUBuTIJV73ybn2bd/giphy.gif',
+        ]
+    },
+    {
+        id: 'Capybara',
+        name: 'Capybara',
+        icon: 'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3OXB4bG02ajdicWw5MXF1bmpmYnFydGlyY243cTh5cXcwYjZ1NDBidCZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/KdomdgcKPyKAWnvKbN/giphy.gif',
+        stickers: [
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3OXB4bG02ajdicWw5MXF1bmpmYnFydGlyY243cTh5cXcwYjZ1NDBidCZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/KdomdgcKPyKAWnvKbN/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXF6N3MxMDRscHAwdjR0NGRhaGdlMTUwdHU1eDB3a2xrZjRueHV3ZSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/zlrWRjCMMkfS4sF19W/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXF6N3MxMDRscHAwdjR0NGRhaGdlMTUwdHU1eDB3a2xrZjRueHV3ZSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/5POlWDZRyatPsSLHxJ/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3aG9nNjZ1NWZhOXRvZmEwNXFrMWVlNndtbmkwbHgyY2VtZDI5em9pZSZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/GzJQhbYXYpXIy6xBNQ/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dWc3cjQ4NjFhZm55NXRzYm1haHRiaXZibXJ2ZG8xb2VzMjI2bWhtZiZlcD12MV9zdGlja2Vyc19zZWFyY2gmY3Q9cw/ZXAQF9UyaZBnRKga80/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM2d1NXRsNTNhdGZqZnBsaHZuMXUybDgxZXQ0OThzaDd0YndsdnkzdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/pjZbOgNdyXlAFhAMNc/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dXkxa25rcnlmYXgyNmdqMnR0ZGwxcjhqcmZ4eXV3ZGE2d3cwODY5MSZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/XnUqczw4HRtdVk5HWe/giphy.gif',
+            'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dXZycmxwNHl1ZWdwc2UxdWxieWc3OXphczVqYXdkYjZjb3F0dDV6bSZlcD12MV9zdGlja2Vyc19yZWxhdGVkJmN0PXM/B1ex4WA8nlFz1Hv9Yu/giphy.gif',
+        ]
+    },
+    {
+        id: 'LolAnimals',
+        name: 'LoL Animals',
+        icon: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzR4eG14eG14eG14eG14eG14eG14eG14eG14eG14eG14eG14/BzyTuYCmvSORqs1ABM/giphy.gif',
+        stickers: [
+            'https://media.giphy.com/media/BzyTuYCmvSORqs1ABM/giphy.gif',
+            'https://media.giphy.com/media/13CoXDiaCcCoyk/giphy.gif',
+            'https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif',
+            'https://media.giphy.com/media/VbnUQpnihPSIgIXuZv/giphy.gif',
+            'https://media.giphy.com/media/MDJ9IbxxvDUQM/giphy.gif',
+            'https://media.giphy.com/media/mlvseq9yvZhba/giphy.gif',
+            'https://media.giphy.com/media/12PA1eI8FBqEBa/giphy.gif',
+            'https://media.giphy.com/media/uUs14eCA2SBgs/giphy.gif',
+            'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+            'https://media.giphy.com/media/OPU6wzx8JrHna/giphy.gif',
+            'https://media.giphy.com/media/SRO0ZwmImic0/giphy.gif',
+            'https://media.giphy.com/media/mCRJDo24UvJMA/giphy.gif',
+        ]
+    },
+    {
+        id: 'NMR3_Farsisticker',
+        name: 'Funny Reactions',
+        icon: 'https://media.giphy.com/media/3oEjHAUOqG3lSS0f1C/giphy.gif',
+        stickers: [
+            'https://media.giphy.com/media/3oEjHAUOqG3lSS0f1C/giphy.gif',
+            'https://media.giphy.com/media/26n6R5HOYPbekK0YE/giphy.gif',
+            'https://media.giphy.com/media/l3fQf1OEAq0iri9RC/giphy.gif',
+            'https://media.giphy.com/media/11zTEl7fbwml68/giphy.gif',
+
+        ]
+    },
+];

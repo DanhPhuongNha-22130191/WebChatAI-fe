@@ -1,0 +1,40 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    padding: 24px 32px;
+    border-radius: 20px;
+    width: fit-content;
+    border: 3px solid #FF5596;
+    box-shadow: 0 10px 25px rgba(255, 85, 150, 0.35);
+    gap: 16px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.gif {
+    width: 240px;
+    height: auto;
+    display: block;
+}
+
+.text {
+    color: #5c4b51;
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
