@@ -31,12 +31,21 @@ const sendRawData = (socketRef, eventName, dataPayload) => {
 
 export const socketActions = {
     login: (socketRef, username, password) => {
-        sendRawData(socketRef, "LOGIN", { user: username, pass: password });
-    },
+    sessionStorage.setItem("pending_login_user", username);
+    localStorage.setItem("pending_login_user", username);
+
+    sendRawData(socketRef, "LOGIN", {
+        user: username,
+        pass: password
+    });
+},
 
     reLogin: (socketRef, username, reLoginCode) => {
-        sendRawData(socketRef, "RE_LOGIN", { user: username, code: reLoginCode });
-    },
+    sendRawData(socketRef, "RE_LOGIN", {
+        user: username,
+        code: reLoginCode
+    });
+},
 
     register: (socketRef, username, password) => {
         sendRawData(socketRef, "REGISTER", { user: username, pass: password });

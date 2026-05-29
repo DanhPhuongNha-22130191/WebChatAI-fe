@@ -1,25 +1,83 @@
 import { setUser, setError, clearError, setRegisterSuccess } from "../../state/auth/authSlice";
-import { setMessages, setPeople } from "../../state/chat/chatSlice";
+import { setMessages, setPeople, clearChat } from "../../state/chat/chatSlice";
+
+const saveAuthStorage = (username, token) => {
+    if (!username) return;
+
+    sessionStorage.setItem("user_name", username);
+    sessionStorage.setItem("current_user", username);
+
+    localStorage.setItem("user_name", username);
+    localStorage.setItem("current_user", username);
+
+    if (token) {
+        sessionStorage.setItem("jwt_token", token);
+        sessionStorage.setItem("re_login_code", token);
+
+        localStorage.setItem("jwt_token", token);
+        localStorage.setItem("re_login_code", token);
+    }
+};
+
+const clearAuthStorage = () => {
+    sessionStorage.removeItem("user_name");
+    sessionStorage.removeItem("current_user");
+    sessionStorage.removeItem("jwt_token");
+    sessionStorage.removeItem("re_login_code");
+    sessionStorage.removeItem("pending_login_user");
+
+    localStorage.removeItem("user_name");
+    localStorage.removeItem("current_user");
+    localStorage.removeItem("jwt_token");
+    localStorage.removeItem("re_login_code");
+    localStorage.removeItem("pending_login_user");
+};
 
 export const handleAuth = (response, dispatch) => {
-    // Server bao loi authen, co the do goi API can login ma user chua login
     console.warn("Authentication Error:", response.mes);
 };
 
 export const handleLogin = (response, dispatch) => {
     if (response.status === "success") {
-        console.log("Đăng nhập thành công, Code:", response.data?.RE_LOGIN_CODE);
+        const token = response.data?.token || response.data?.RE_LOGIN_CODE;
 
-        // luu code vao localStorage
-        if (response.data.RE_LOGIN_CODE) {
-            localStorage.setItem('re_login_code', response.data.RE_LOGIN_CODE);
+        const pendingLoginUser =
+            sessionStorage.getItem("pending_login_user") ||
+            localStorage.getItem("pending_login_user");
+
+        const username =
+            response.data?.user ||
+            response.data?.username ||
+            response.data?.name ||
+            pendingLoginUser;
+
+        if (!username) {
+            dispatch(setError("Không xác định được tài khoản đăng nhập"));
+            return;
         }
-        // lay user name da luu o localStorage
-        const currentName = localStorage.getItem('user_name') || "User";
+
+        sessionStorage.setItem("user_name", username);
+        sessionStorage.setItem("current_user", username);
+
+        localStorage.setItem("user_name", username);
+        localStorage.setItem("current_user", username);
+
+        if (token) {
+            sessionStorage.setItem("jwt_token", token);
+            sessionStorage.setItem("re_login_code", token);
+
+            localStorage.setItem("jwt_token", token);
+            localStorage.setItem("re_login_code", token);
+        }
+
+        sessionStorage.removeItem("pending_login_user");
+        localStorage.removeItem("pending_login_user");
 
         dispatch(setUser({
-            ...response.data, // Copy tất cả những gì server trả về
-            name: currentName // bo sung name
+            ...response.data,
+            user: username,
+            username,
+            name: username
         }));
 
         dispatch(clearError());
@@ -30,40 +88,70 @@ export const handleLogin = (response, dispatch) => {
 
 export const handleReLogin = (response, dispatch) => {
     if (response.status === "success") {
-        if (response.data?.RE_LOGIN_CODE) {
-            localStorage.setItem('re_login_code', response.data.RE_LOGIN_CODE);
+        const token = response.data?.token || response.data?.RE_LOGIN_CODE;
+
+        const username =
+            response.data?.user ||
+            response.data?.username ||
+            response.data?.name ||
+            sessionStorage.getItem("user_name") ||
+            localStorage.getItem("user_name");
+
+        if (!username) {
+            sessionStorage.clear();
+            localStorage.removeItem("jwt_token");
+            localStorage.removeItem("re_login_code");
+            localStorage.removeItem("user_name");
+            localStorage.removeItem("current_user");
+
+            dispatch(setError("Phiên đăng nhập lỗi. Vui lòng đăng nhập lại."));
+            dispatch(setUser(null));
+
+            window.location.href = "/login";
+            return;
         }
 
-        // Ưu tiên lấy tên từ Server trả về, nếu không có thì giữ nguyên tên cũ trong LocalStorage
-        const serverUser = response.data.user;
-        const localUser = localStorage.getItem('user_name');
+        sessionStorage.setItem("user_name", username);
+        sessionStorage.setItem("current_user", username);
 
-        // Chỉ cập nhật vào storage nếu server thực sự trả về tên mới
-        if (serverUser) {
-            localStorage.setItem('user_name', serverUser);
+        localStorage.setItem("user_name", username);
+        localStorage.setItem("current_user", username);
+
+        if (token) {
+            sessionStorage.setItem("jwt_token", token);
+            sessionStorage.setItem("re_login_code", token);
+
+            localStorage.setItem("jwt_token", token);
+            localStorage.setItem("re_login_code", token);
         }
-        // Set State (Kết hợp dữ liệu server và tên đang có)
-        // Dùng (serverUser || localUser) để đảm bảo không bị mất tên
+
         dispatch(setUser({
             ...response.data,
-            name: serverUser || localUser || "User"
+            user: username,
+            username,
+            name: username
         }));
 
         dispatch(clearError());
     } else {
         console.log("Re-login thất bại, mã hết hạn hoặc lỗi.");
-        localStorage.removeItem('re_login_code');
-        localStorage.removeItem('user_name');
+
+        sessionStorage.clear();
+        localStorage.removeItem("jwt_token");
+        localStorage.removeItem("re_login_code");
+        localStorage.removeItem("user_name");
+        localStorage.removeItem("current_user");
+        localStorage.removeItem("pending_login_user");
+
         dispatch(setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại."));
         dispatch(setUser(null));
-        // Dùng window.location vì ở đây không có hook navigate
-        window.location.href = '/login';
+
+        window.location.href = "/login";
     }
 };
 
 export const handleRegister = (response, dispatch) => {
     if (response.status === "success") {
-        // Set state báo đăng ký thành công
         dispatch(setRegisterSuccess(true));
     } else {
         dispatch(setError(response.mes || "Đăng ký lỗi"));
@@ -72,11 +160,16 @@ export const handleRegister = (response, dispatch) => {
 };
 
 export const handleLogout = (response, dispatch) => {
-    // Xóa thông tin đăng nhập local
-    localStorage.removeItem('re_login_code');
-    localStorage.removeItem('user_name');
-    // Reset state user về null để kích hoạt chuyển hướng
+    console.log("Đăng xuất:", response?.mes || "Logout successful");
+
+    clearAuthStorage();
+
     dispatch(setUser(null));
-    dispatch(setMessages([])); // Clear tin nhắn cũ
-    dispatch(setPeople([]));// Clear danh sách user
+    dispatch(setMessages([]));
+    dispatch(setPeople([]));
+    dispatch(clearChat());
+
+    if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+    }
 };

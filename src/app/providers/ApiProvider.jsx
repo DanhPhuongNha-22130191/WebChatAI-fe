@@ -7,8 +7,26 @@ import { ApiContext } from './ApiContext.js';
 // API Base URL - trong dev mode dùng '/api' để đi qua proxy, production dùng env
 const envApiUrl = import.meta.env.VITE_API_BASE_URL;
 const API_BASE_URL = import.meta.env.DEV
-    ? '/api'  // Dev mode: dùng relative path để đi qua Vite proxy tránh CORS
-    : (envApiUrl || '/api');  // Production: dùng env variable
+    ? '/api' // Dev mode: dùng relative path để đi qua Vite proxy tránh CORS
+    : (envApiUrl || '/api'); // Production: dùng env variable
+
+const getStoredUsername = () => {
+    return (
+        sessionStorage.getItem('user_name') ||
+        sessionStorage.getItem('current_user') ||
+        localStorage.getItem('user_name') ||
+        localStorage.getItem('current_user')
+    );
+};
+
+const getStoredToken = () => {
+    return (
+        sessionStorage.getItem('jwt_token') ||
+        sessionStorage.getItem('re_login_code') ||
+        localStorage.getItem('jwt_token') ||
+        localStorage.getItem('re_login_code')
+    );
+};
 
 // Utility function để kiểm tra environment
 export const getEnvironmentInfo = () => {
@@ -20,15 +38,27 @@ export const getEnvironmentInfo = () => {
         envApiUrl: envApiUrl || null,
     };
 };
+
 // Tạo provider
 export const ApiProvider = ({ children }) => {
     // Lấy user từ Redux Store để có thể dùng cho authentication
     const user = useSelector((state) => state.auth.user);
-    const username = user?.user || user?.username || localStorage.getItem('user_name');
+
+    const username =
+        user?.user ||
+        user?.username ||
+        user?.name ||
+        getStoredUsername();
 
     // Helper function để build full URL
     const getApiUrl = (endpoint) => {
         return endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+    };
+
+    const getAuthHeaders = () => {
+        const token = getStoredToken();
+
+        return token ? { Authorization: `Bearer ${token}` } : {};
     };
 
     // API Client methods
@@ -46,6 +76,7 @@ export const ApiProvider = ({ children }) => {
                         method: 'GET',
                         headers: {
                             'Content-Type': 'application/json',
+                            ...getAuthHeaders(),
                             ...options.headers,
                         },
                         ...options,
@@ -53,13 +84,15 @@ export const ApiProvider = ({ children }) => {
 
                     if (!response.ok) {
                         let errorMessage = `HTTP error! status: ${response.status}`;
+
                         try {
                             const errorData = await response.json();
                             errorMessage = errorData.message || errorData.error || errorMessage;
-                        } catch{
+                        } catch {
                             const errorText = await response.text();
                             if (errorText) errorMessage = errorText;
                         }
+
                         console.error(`API Error [${response.status}]:`, errorMessage);
                         throw new Error(errorMessage);
                     }
@@ -77,6 +110,7 @@ export const ApiProvider = ({ children }) => {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            ...getAuthHeaders(),
                             ...options.headers,
                         },
                         body: JSON.stringify(data),
@@ -85,6 +119,7 @@ export const ApiProvider = ({ children }) => {
 
                     if (!response.ok) {
                         let errorMessage = `HTTP error! status: ${response.status}`;
+
                         try {
                             const errorData = await response.json();
                             errorMessage = errorData.message || errorData.error || errorMessage;
@@ -92,6 +127,7 @@ export const ApiProvider = ({ children }) => {
                             const errorText = await response.text();
                             if (errorText) errorMessage = errorText;
                         }
+
                         console.error(`API Error [${response.status}]:`, errorMessage, 'URL:', url, 'Data:', data);
                         throw new Error(errorMessage);
                     }
@@ -109,6 +145,7 @@ export const ApiProvider = ({ children }) => {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
+                            ...getAuthHeaders(),
                             ...options.headers,
                         },
                         body: JSON.stringify(data),
@@ -116,7 +153,18 @@ export const ApiProvider = ({ children }) => {
                     });
 
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        let errorMessage = `HTTP error! status: ${response.status}`;
+
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorData.error || errorMessage;
+                        } catch {
+                            const errorText = await response.text();
+                            if (errorText) errorMessage = errorText;
+                        }
+
+                        console.error(`API Error [${response.status}]:`, errorMessage);
+                        throw new Error(errorMessage);
                     }
 
                     return await response.json();
@@ -132,13 +180,25 @@ export const ApiProvider = ({ children }) => {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
+                            ...getAuthHeaders(),
                             ...options.headers,
                         },
                         ...options,
                     });
 
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        let errorMessage = `HTTP error! status: ${response.status}`;
+
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.message || errorData.error || errorMessage;
+                        } catch {
+                            const errorText = await response.text();
+                            if (errorText) errorMessage = errorText;
+                        }
+
+                        console.error(`API Error [${response.status}]:`, errorMessage);
+                        throw new Error(errorMessage);
                     }
 
                     return await response.json();
@@ -156,7 +216,8 @@ export const ApiProvider = ({ children }) => {
                  * @returns {Promise<Object>} Response từ server
                  */
                 createPendingConversation: async (toUsername, fromUsername = null) => {
-                    const from = fromUsername || username;
+                    const from = fromUsername || username || getStoredUsername();
+
                     if (!from || !toUsername) {
                         throw new Error('fromUsername and toUsername are required');
                     }
@@ -180,7 +241,8 @@ export const ApiProvider = ({ children }) => {
                  * @returns {Promise<Array>} Danh sách pending contacts
                  */
                 getIncomingPendingConversations: async (targetUsername = null) => {
-                    const userToQuery = targetUsername || username;
+                    const userToQuery = targetUsername || username || getStoredUsername();
+
                     if (!userToQuery) {
                         throw new Error('Username is required');
                     }
@@ -197,9 +259,11 @@ export const ApiProvider = ({ children }) => {
                     if (Array.isArray(response)) {
                         return response;
                     }
+
                     if (response.success && Array.isArray(response.data)) {
                         return response.data;
                     }
+
                     if (Array.isArray(response.pendingConversations)) {
                         return response.pendingConversations;
                     }
@@ -214,7 +278,8 @@ export const ApiProvider = ({ children }) => {
                  * @returns {Promise<Object>} Response từ server
                  */
                 acceptPendingConversation: async (fromUsername, toUsername = null) => {
-                    const to = toUsername || username;
+                    const to = toUsername || username || getStoredUsername();
+
                     if (!fromUsername || !to) {
                         throw new Error('fromUsername and toUsername are required');
                     }
@@ -240,7 +305,8 @@ export const ApiProvider = ({ children }) => {
                  * @returns {Promise<Object>} Response từ server
                  */
                 deletePendingConversation: async (fromUsername, toUsername = null) => {
-                    const to = toUsername || username;
+                    const to = toUsername || username || getStoredUsername();
+
                     if (!fromUsername || !to) {
                         throw new Error('fromUsername and toUsername are required');
                     }
