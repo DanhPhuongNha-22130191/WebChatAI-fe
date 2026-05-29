@@ -4,6 +4,16 @@ import { handleSocketMessage } from "../../../realtime/socketHandlers";
 import { store } from '../../store';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8081/api/ws';
+
+const buildWsUrlWithToken = () => {
+    const token =
+    sessionStorage.getItem("jwt_token") ||
+    localStorage.getItem("jwt_token");
+    if (!token) return WS_URL;
+
+    const separator = WS_URL.includes('?') ? '&' : '?';
+    return `${WS_URL}${separator}token=${encodeURIComponent(token)}`;
+};
 const MAX_RECONNECT_ATTEMPTS = 5;
 const BASE_DELAY = 3000;
 
@@ -73,7 +83,7 @@ export const useSocketConnection = (dispatch, lastActivityRef, isOnline) => {
             }
 
             isConnectingRef.current = true;
-            const socket = new WebSocket(WS_URL);
+            const socket = new WebSocket(buildWsUrlWithToken());
             socketRef.current = socket;
 
             socket.onopen = () => {
@@ -85,8 +95,8 @@ export const useSocketConnection = (dispatch, lastActivityRef, isOnline) => {
                 reconnectAttemptsRef.current = 0;
 
                 // Logic đăng nhập lại (Re-login)
-                const code = localStorage.getItem('re_login_code');
-                const savedUser = localStorage.getItem('user_name');
+                const code = sessionStorage.getItem("re_login_code") || localStorage.getItem("re_login_code");
+                const savedUser = sessionStorage.getItem("user_name") || localStorage.getItem("user_name");
                 const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
 
                 if (code && savedUser && !isAuthPage) {
