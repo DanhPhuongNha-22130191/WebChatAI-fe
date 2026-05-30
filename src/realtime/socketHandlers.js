@@ -1,24 +1,60 @@
-import { handleAuth, handleLogin, handleReLogin, handleRegister, handleLogout } from "./handlers/authHandlers";
-import { handleSendChat, handleGetChatHistory } from "./handlers/chatHandlers";
-import { handleCreateRoom, handleJoinRoom } from "./handlers/roomHandlers";
-import { handleGetUserList, handleCheckUserOnline, handleCheckUserExist } from "./handlers/userHandlers";
+import {
+    handleAuth,
+    handleLogin,
+    handleReLogin,
+    handleRegister,
+    handleLogout
+} from "./handlers/authHandlers";
 
-export const handleSocketMessage = (response, dispatch, socketActions, socketRef, getState) => {
-    // Log đầu handler để biết handler có được gọi không
-    console.log('[Socket Handler]  Handler được gọi với event:', response?.event, '| Status:', response?.status);
+import {
+    handleSendChat,
+    handleGetChatHistory
+} from "./handlers/chatHandlers";
 
-    // Kiểm tra response và event
+import {
+    handleCreateRoom,
+    handleJoinRoom,
+    handleAddUserToRoom,
+    handleAddedToRoom,
+    handleGetRoomMembers,
+    handleRenameRoom,
+    handleRoomRenamed,
+    handleLeaveRoom,
+    handleRoomMemberLeft
+} from "./handlers/roomHandlers";
+
+import {
+    handleGetUserList,
+    handleCheckUserOnline,
+    handleCheckUserExist
+} from "./handlers/userHandlers";
+
+export const handleSocketMessage = (
+    response,
+    dispatch,
+    socketActions,
+    socketRef,
+    getState
+) => {
+    console.log(
+        "[Socket Handler] Handler được gọi với event:",
+        response?.event,
+        "| Status:",
+        response?.status
+    );
+
     if (!response) {
         console.warn("[Socket Handler] Response is null or undefined");
         return;
     }
 
     if (!response.event) {
-        if (response.action === 'error') {
+        if (response.action === "error") {
             console.error("[Socket Error]", response.data);
             return;
         }
-        console.warn("[Socket Handler] Response không có field 'event':", response);
+
+        console.warn("[Socket Handler] Response không có field event:", response);
         return;
     }
 
@@ -39,16 +75,12 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
             handleRegister(response, dispatch);
             break;
 
-        case "SEND_CHAT":
-            handleSendChat(response, dispatch, socketActions, socketRef);
-            break;
-
-        case "GET_USER_LIST":
-            handleGetUserList(response, dispatch);
-            break;
-
         case "LOGOUT":
             handleLogout(response, dispatch);
+            break;
+
+        case "SEND_CHAT":
+            handleSendChat(response, dispatch, socketActions, socketRef);
             break;
 
         case "GET_PEOPLE_CHAT_MES":
@@ -56,21 +88,85 @@ export const handleSocketMessage = (response, dispatch, socketActions, socketRef
             handleGetChatHistory(response, dispatch, getState);
             break;
 
-        case "CREATE_ROOM":
-            handleCreateRoom(response, dispatch, socketActions, socketRef, getState);
-            break;
-
-        case "JOIN_ROOM":
-            handleJoinRoom(response, dispatch);
+        case "GET_USER_LIST":
+            handleGetUserList(response, dispatch);
             break;
 
         case "CHECK_USER_ONLINE":
             handleCheckUserOnline(response, dispatch);
             break;
 
-
         case "CHECK_USER_EXIST":
             handleCheckUserExist(response, dispatch);
+            break;
+
+        case "CREATE_ROOM":
+            handleCreateRoom(
+                response,
+                dispatch,
+                socketActions,
+                socketRef,
+                getState
+            );
+            break;
+
+        case "JOIN_ROOM":
+            handleJoinRoom(response, dispatch);
+            break;
+
+        case "ADD_USER_TO_ROOM":
+            handleAddUserToRoom(
+                response,
+                dispatch,
+                socketActions,
+                socketRef
+            );
+            break;
+
+        case "ADDED_TO_ROOM":
+            handleAddedToRoom(
+                response,
+                dispatch,
+                socketActions,
+                socketRef
+            );
+            break;
+
+        case "GET_ROOM_MEMBERS":
+            handleGetRoomMembers(response, dispatch);
+            break;
+
+        case "RENAME_ROOM":
+            handleRenameRoom(
+                response,
+                dispatch,
+                socketActions,
+                socketRef,
+                getState
+            );
+            break;
+
+        case "ROOM_RENAMED":
+            handleRoomRenamed(
+                response,
+                dispatch,
+                socketActions,
+                socketRef,
+                getState
+            );
+            break;
+
+        case "LEAVE_ROOM":
+            handleLeaveRoom(
+                response,
+                dispatch,
+                socketActions,
+                socketRef
+            );
+            break;
+
+        case "ROOM_MEMBER_LEFT":
+            handleRoomMemberLeft(response, dispatch);
             break;
 
         default:

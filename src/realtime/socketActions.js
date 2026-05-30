@@ -1,5 +1,4 @@
-// Dóng gói dữ liệu để gửi đi
-// Gui raw data
+// Đóng gói dữ liệu để gửi đi qua WebSocket
 const sendRawData = (socketRef, eventName, dataPayload) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
         const payload = {
@@ -9,19 +8,22 @@ const sendRawData = (socketRef, eventName, dataPayload) => {
                 data: dataPayload
             }
         };
+
         const payloadString = JSON.stringify(payload);
+
         console.log(`[Socket] Gửi request ${eventName}:`, {
             payload: payloadString,
             readyState: socketRef.current.readyState,
             url: socketRef.current.url
         });
+
         socketRef.current.send(payloadString);
-        // Chỉ log cho các event quan trọng, không log mọi thứ
+
         if (eventName !== "GET_USER_LIST" && eventName !== "SEND_CHAT") {
             console.log(`[Socket] ${eventName}:`, dataPayload);
         }
     } else {
-        console.error("Socket chua ket noi, khong the gui:", eventName, {
+        console.error("Socket chưa kết nối, không thể gửi:", eventName, {
             hasSocket: !!socketRef.current,
             readyState: socketRef.current?.readyState,
             expectedState: WebSocket.OPEN
@@ -31,74 +33,122 @@ const sendRawData = (socketRef, eventName, dataPayload) => {
 
 export const socketActions = {
     login: (socketRef, username, password) => {
-    sessionStorage.setItem("pending_login_user", username);
-    localStorage.setItem("pending_login_user", username);
+        sessionStorage.setItem("pending_login_user", username);
+        localStorage.setItem("pending_login_user", username);
 
-    sendRawData(socketRef, "LOGIN", {
-        user: username,
-        pass: password
-    });
-},
+        sendRawData(socketRef, "LOGIN", {
+            user: username,
+            pass: password
+        });
+    },
 
     reLogin: (socketRef, username, reLoginCode) => {
-    sendRawData(socketRef, "RE_LOGIN", {
-        user: username,
-        code: reLoginCode
-    });
-},
+        sendRawData(socketRef, "RE_LOGIN", {
+            user: username,
+            code: reLoginCode
+        });
+    },
 
     register: (socketRef, username, password) => {
-        sendRawData(socketRef, "REGISTER", { user: username, pass: password });
+        sendRawData(socketRef, "REGISTER", {
+            user: username,
+            pass: password
+        });
+    },
+
+    logout: (socketRef) => {
+        sendRawData(socketRef, "LOGOUT", {});
     },
 
     sendChat: (socketRef, to, message, chatType = "people") => {
-        sendRawData(socketRef, "SEND_CHAT", { type: chatType, to: to, mes: message });
+        sendRawData(socketRef, "SEND_CHAT", {
+            type: chatType,
+            to,
+            mes: message
+        });
     },
 
     chatHistory: (socketRef, to, page = 1) => {
-        sendRawData(socketRef, "GET_PEOPLE_CHAT_MES", { name: to, page });
+        sendRawData(socketRef, "GET_PEOPLE_CHAT_MES", {
+            name: to,
+            page
+        });
     },
 
     roomHistory: (socketRef, roomName, page = 1) => {
-
-        sendRawData(socketRef, "GET_ROOM_CHAT_MES", { name: roomName, page });
+        sendRawData(socketRef, "GET_ROOM_CHAT_MES", {
+            name: roomName,
+            page
+        });
     },
 
     createRoom: (socketRef, roomName) => {
-        sendRawData(socketRef, "CREATE_ROOM", { name: roomName });
+        sendRawData(socketRef, "CREATE_ROOM", {
+            name: roomName
+        });
     },
 
     joinRoom: (socketRef, roomName) => {
-        sendRawData(socketRef, "JOIN_ROOM", { name: roomName });
+        sendRawData(socketRef, "JOIN_ROOM", {
+            name: roomName
+        });
+    },
+
+    addUserToRoom: (socketRef, roomName, username) => {
+        sendRawData(socketRef, "ADD_USER_TO_ROOM", {
+            name: roomName,
+            user: username
+        });
+    },
+
+    getRoomMembers: (socketRef, roomName) => {
+        sendRawData(socketRef, "GET_ROOM_MEMBERS", {
+            name: roomName
+        });
+    },
+
+    // Đổi tên phòng chat nhóm
+    renameRoom: (socketRef, oldName, newName) => {
+        sendRawData(socketRef, "RENAME_ROOM", {
+            oldName,
+            newName
+        });
+    },
+
+    // Rời khỏi phòng chat nhóm
+    leaveRoom: (socketRef, roomName) => {
+        sendRawData(socketRef, "LEAVE_ROOM", {
+            name: roomName
+        });
     },
 
     checkOnline: (socketRef, username) => {
-        // Lưu user đang check để map với response (vì response không có user field)
         window.__pendingCheckOnline = username;
-        sendRawData(socketRef, "CHECK_USER_ONLINE", { user: username });
+
+        sendRawData(socketRef, "CHECK_USER_ONLINE", {
+            user: username
+        });
     },
 
     checkExist: (socketRef, username) => {
-        sendRawData(socketRef, "CHECK_USER_EXIST", { user: username });
+        sendRawData(socketRef, "CHECK_USER_EXIST", {
+            user: username
+        });
+    },
+
+    checkUserExist: (socketRef, username) => {
+        sendRawData(socketRef, "CHECK_USER_EXIST", {
+            user: username
+        });
     },
 
     getUserList: (socketRef) => {
         sendRawData(socketRef, "GET_USER_LIST", {});
     },
 
-    checkUserExist: (socketRef, username) => {
-        sendRawData(socketRef, "CHECK_USER_EXIST", { user: username });
-    },
-
     ping: (socketRef) => {
         if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-            // Dùng GET_USER_LIST làm heartbeat để giữ kết nối vì server không hiểu action PING
-            // Đây là một workaround an toàn
             socketActions.getUserList(socketRef);
         }
-    },
-
-    logout: (socketRef) => {
-        sendRawData(socketRef, "LOGOUT", {});
     }
-}
+};

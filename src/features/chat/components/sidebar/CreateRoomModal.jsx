@@ -11,106 +11,138 @@ import Button from '../../../../shared/components/Button';
 const CreateRoomModal = ({ onClose }) => {
     const { actions } = useSocket();
     const dispatch = useDispatch();
-    const people = useSelector((s) => s.chat.people);
-    const currentUser = useSelector((s) => s.auth.user);
+
+    const people = useSelector((state) => state.chat.people);
+    const currentUser = useSelector((state) => state.auth.user);
 
     const [roomName, setRoomName] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUsers, setSelectedUsers] = useState([]);
 
-    const availableUsers = people.filter(p =>
-        (p.type === 0 || p.type === 'people') &&
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const currentUserName =
+        currentUser?.name ||
+        currentUser?.user ||
+        currentUser?.username ||
+        sessionStorage.getItem('user_name') ||
+        localStorage.getItem('user_name') ||
+        '';
+
+    const availableUsers = people.filter((person) =>
+        (person.type === 0 || person.type === 'people') &&
+        person.name !== currentUserName &&
+        person.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const handleToggleUser = (username) => {
-        setSelectedUsers(prev =>
-            prev.includes(username)
-                ? prev.filter(u => u !== username)
-                : [...prev, username]
+        setSelectedUsers((previousUsers) =>
+            previousUsers.includes(username)
+                ? previousUsers.filter((user) => user !== username)
+                : [...previousUsers, username]
         );
     };
 
-    const handleCreate = async () => {
-        if (!roomName.trim()) {
-            alert('Vui lòng nhập tên phòng');
+    const handleCreate = () => {
+        const normalizedRoomName = roomName.trim();
+
+        if (!normalizedRoomName) {
+            alert('Vui lòng nhập tên nhóm');
             return;
         }
 
         if (selectedUsers.length === 0) {
-            alert('Vui lòng chọn ít nhất 1 người');
+            alert('Vui lòng chọn ít nhất 1 thành viên');
             return;
         }
 
-        // Lấy tên người dùng hiện tại
-        const currentUserName = currentUser?.name || currentUser?.user || currentUser?.username || 
-                               localStorage.getItem('user_name') || 'bạn';
-
-                               console.log("Bắt đầu tạo nhóm: {", {
-                                roomName: roomName.trim(),
-                                selectedUsers: selectedUsers,
-                                currentUserName: currentUserName
-                            });
-                        
-
-
-        // Lưu thông tin tạo nhóm vào Redux để xử lý sau khi nhận response thành công
         dispatch(setPendingRoomCreation({
-            roomName: roomName.trim(),
-            selectedUsers: selectedUsers,
-            currentUserName: currentUserName
+            roomName: normalizedRoomName,
+            selectedUsers,
+            currentUserName
         }));
 
-        // Gọi API tạo phòng - logic thêm user sẽ được xử lý trong socketHandlers khi nhận response thành công
-        actions.createRoom(roomName.trim());
-        console.log("Đã gửi CREATE_ROOM request");
+        actions.createRoom(normalizedRoomName);
+
         onClose();
     };
 
     return (
-        <div style={{
-            height: '100%',
-            maxHeight: '100%',
-            minHeight: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            backgroundColor: 'var(--card-bg)',
-            width: '100%',
-            boxSizing: 'border-box',
-            overflow: 'hidden'
-        }}>
+        <div
+            style={{
+                height: '100%',
+                maxHeight: '100%',
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: 'var(--card-bg)',
+                width: '100%',
+                boxSizing: 'border-box',
+                overflow: 'hidden'
+            }}
+        >
             <CreateRoomHeader onClose={onClose} />
-            <div style={{ padding: '0 16px', marginTop: 8, marginBottom: 0, width: '100%', boxSizing: 'border-box', flexShrink: 0 }}>
+
+            <div
+                style={{
+                    padding: '0 16px',
+                    marginTop: 8,
+                    marginBottom: 0,
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    flexShrink: 0
+                }}
+            >
                 <TextInput
-                    label="Tên phòng chat"
+                    label="Tên nhóm chat"
                     value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
-                    placeholder="Nhập tên phòng chat"
+                    onChange={(event) => setRoomName(event.target.value)}
+                    placeholder="Nhập tên nhóm chat"
                 />
             </div>
-            <div style={{ padding: '0 16px', marginTop: 8, marginBottom: 0, width: '100%', boxSizing: 'border-box', flexShrink: 0 }}>
+
+            <div
+                style={{
+                    padding: '0 16px',
+                    marginTop: 8,
+                    marginBottom: 0,
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    flexShrink: 0
+                }}
+            >
                 <SearchBar
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Tìm kiếm người dùng"
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Tìm kiếm thành viên"
                 />
             </div>
-            <div style={{ marginTop: 8, marginBottom: 8, flex: 1, minHeight: 0, overflow: 'hidden' }}>
+
+            <div
+                style={{
+                    marginTop: 8,
+                    marginBottom: 8,
+                    flex: 1,
+                    minHeight: 0,
+                    overflow: 'hidden'
+                }}
+            >
                 <UserSelectionList
                     users={availableUsers}
                     selectedUsers={selectedUsers}
                     onToggleUser={handleToggleUser}
                 />
             </div>
-            <div style={{ 
-                padding: '0 16px 12px 16px', 
-                marginTop: 'auto', 
-                width: '100%', 
-                boxSizing: 'border-box', 
-                flexShrink: 0,
-                display: 'flex',
-                justifyContent: 'center'
-            }}>
+
+            <div
+                style={{
+                    padding: '0 16px 12px 16px',
+                    marginTop: 'auto',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    flexShrink: 0,
+                    display: 'flex',
+                    justifyContent: 'center'
+                }}
+            >
                 <Button
                     onClick={handleCreate}
                     disabled={!roomName.trim() || selectedUsers.length === 0}
@@ -120,7 +152,7 @@ const CreateRoomModal = ({ onClose }) => {
                         padding: '10px 24px'
                     }}
                 >
-                    Tạo phòng chat
+                    Tạo nhóm
                 </Button>
             </div>
         </div>
