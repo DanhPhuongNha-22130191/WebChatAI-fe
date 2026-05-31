@@ -29,6 +29,16 @@ export const useSocketActions = (socketRef, lastActivityRef) => {
                 socketActions.sendChat(socketRef, to, message, chatType);
             },
 
+            recallMessage: (messageId) => {
+                lastActivityRef.current = Date.now();
+                socketActions.recallMessage(socketRef, messageId);
+            },
+
+            editMessage: (messageId, newContent) => {
+                lastActivityRef.current = Date.now();
+                socketActions.editMessage(socketRef, messageId, newContent);
+            },
+
             chatHistory: (to, page = 1) => {
                 lastActivityRef.current = Date.now();
                 socketActions.chatHistory(socketRef, to, page);
