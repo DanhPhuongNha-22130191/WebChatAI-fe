@@ -2,13 +2,96 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
     messages: [],
-    people: [], // list trả về từ GET_USER_LIST: [{ name, type, actionTime, lastMessage }, ...]
-    activeChat: null, // { name, type } | null
-    onlineStatus: {}, // { username: boolean }
-    pendingRoomCreation: null, // { roomName, selectedUsers, currentUserName } | null - Lưu thông tin tạo nhóm đang chờ
-    hasMore: true, // Trạng thái còn dữ liệu để load hay không
-    pendingPage: 1, // Page number đang được fetch
-    pendingConversations: [], // Danh sách pending contact requests: [{ username, status, createdAt }, ...]
+    people: [],
+    activeChat: null,
+    onlineStatus: {},
+    pendingRoomCreation: null,
+    hasMore: true,
+    pendingPage: 1,
+    pendingConversations: [],
+};
+
+const isRecalledMessage = (message) => {
+    return message?.recalled === true || message?.status === "recalled";
+};
+
+const getMessageText = (message) => {
+    if (isRecalledMessage(message)) {
+        return "Tin nhắn đã được thu hồi";
+    }
+
+    return message?.mes ?? message?.content ?? message?.text ?? "";
+};
+
+const getCurrentUsername = () => {
+    return (
+        sessionStorage.getItem("user_name") ||
+        sessionStorage.getItem("current_user") ||
+        localStorage.getItem("user_name") ||
+        localStorage.getItem("current_user") ||
+        ""
+    );
+};
+
+const getConversationInfoFromMessage = (message) => {
+    if (!message) {
+        return {
+            targetName: null,
+            targetType: null
+        };
+    }
+
+    const currentUsername = getCurrentUsername();
+
+    if (message.type === "room" || message.type === 1) {
+        return {
+            targetName: message.to ?? message.receiver,
+            targetType: 1
+        };
+    }
+
+    const senderName = message.name ?? message.sender;
+    const receiverName = message.to ?? message.receiver;
+
+    return {
+        targetName:
+            senderName === currentUsername
+                ? receiverName
+                : senderName,
+        targetType: 0
+    };
+};
+
+const updateSidebarPreviewIfCurrentMessage = (
+    state,
+    oldMessageText,
+    updatedMessage
+) => {
+    const { targetName, targetType } =
+        getConversationInfoFromMessage(updatedMessage);
+
+    if (!targetName) {
+        return;
+    }
+
+    const sidebarIndex = state.people.findIndex(
+        (person) =>
+            person.name === targetName &&
+            person.type === targetType
+    );
+
+    if (sidebarIndex === -1) {
+        return;
+    }
+
+    /*
+     * Chỉ thay preview khi sidebar đang hiển thị chính nội dung cũ.
+     * Tránh trường hợp sửa một tin nhắn cũ làm ghi đè preview
+     * của tin nhắn mới hơn.
+     */
+    if (state.people[sidebarIndex].lastMessage === oldMessageText) {
+        state.people[sidebarIndex].lastMessage = getMessageText(updatedMessage);
+    }
 };
 
 const chatSlice = createSlice({
@@ -18,111 +101,183 @@ const chatSlice = createSlice({
         setPeople(state, action) {
             const newPeople = action.payload ?? [];
 
-            state.people = newPeople.map(newItem => {
-                const existingItem = state.people.find(p => p.name === newItem.name && p.type === newItem.type);
+            state.people = newPeople.map((newItem) => {
+                const existingItem = state.people.find(
+                    (person) =>
+                        person.name === newItem.name &&
+                        person.type === newItem.type
+                );
 
                 if (existingItem) {
                     return {
+                        ...existingItem,
                         ...newItem,
-                        // Giu lai userList neu server gui thieu
-                        userList: (newItem.userList && newItem.userList.length > 0) ? newItem.userList : existingItem.userList,
-                        own: newItem.own !== undefined ? newItem.own : existingItem.own,
-                        isOnline: existingItem.isOnline // Giữ trạng thái online 
+                        userList:
+                            newItem.userList && newItem.userList.length > 0
+                                ? newItem.userList
+                                : existingItem.userList,
+                        own:
+                            newItem.own !== undefined
+                                ? newItem.own
+                                : existingItem.own,
+                        isOnline: existingItem.isOnline
                     };
                 }
+
                 return newItem;
             });
         },
+
         setOnlineStatus(state, action) {
             const { user, isOnline } = action.payload;
+
             state.onlineStatus[user] = isOnline;
         },
+
         setActiveChat(state, action) {
             state.activeChat = action.payload ?? null;
-            state.hasMore = true; // Reset hasMore khi đổi chat
+            state.hasMore = true;
         },
+
         setMessages(state, action) {
-            state.messages = action.payload;
+            state.messages = action.payload ?? [];
         },
+
         upsertMessage(state, action) {
             const newMessage = action.payload;
-            const { activeChat, messages } = state;
 
-            // 1. Kiểm tra tin nhắn có thuộc phòng đang mở hay không
-            let isRelevant = false;
-            if (activeChat) {
-                const isActiveChatRoom = activeChat.type === 1 || activeChat.type === 'room';
-                const isActiveChatPeople = activeChat.type === 0 || activeChat.type === 'people';
-                const isMsgRoom = newMessage.type === 'room' || newMessage.type === 1;
-
-                if (isActiveChatPeople && !isMsgRoom) {
-                    if (newMessage.to === activeChat.name || newMessage.name === activeChat.name) isRelevant = true;
-                } else if (isActiveChatRoom && isMsgRoom) {
-                    if (newMessage.to === activeChat.name) isRelevant = true;
-                }
+            if (!newMessage || !state.activeChat) {
+                return;
             }
 
-            // Chỉ thêm tin nhắn nếu nó thuộc phòng đang mở
-            if (isRelevant) {
-                // Kiểm tra xem tin nhắn này có phải khớp với tin nhắn tạm không
-                const optimisticIndex = state.messages.findIndex(m =>
-                    (newMessage.tempId && m.tempId === newMessage.tempId) ||
-                    (m.status === 'sending' && m.mes === newMessage.mes) 
-                );
+            const activeChat = state.activeChat;
 
-                if (optimisticIndex !== -1) {
-                    // Cập nhật tin nhắn tạm thành tin nhắn thật
-                    state.messages[optimisticIndex] = {
-                        ...newMessage,
-                        status: newMessage.status || 'sent' // Đánh dấu là đã gửi thành công hoặc theo status server trả về
-                    };
-                } else {
-                    // Kiểm tra trùng lặp, check trùng ID(khác null)
-                    const isDuplicate = state.messages.some(m =>
-                        (m.id && newMessage.id && m.id === newMessage.id) ||
-                        (m.createAt === newMessage.createAt && m.name === newMessage.name && m.mes === newMessage.mes)
-                    );
+            const isActiveChatRoom =
+                activeChat.type === 1 ||
+                activeChat.type === "room" ||
+                activeChat.type === "group";
 
-                    if (!isDuplicate) {
-                        // Thêm tin nhắn mới
-                        // Nếu từ socket về, mặc định là sent
-                        // Nếu từ UI -> sending
-                        state.messages.push({
-                            ...newMessage,
-                            status: newMessage.status || 'sent'
-                        });
-                    }
-                }
+            const isActiveChatPeople =
+                activeChat.type === 0 ||
+                activeChat.type === "people";
+
+            const isMessageRoom =
+                newMessage.type === "room" ||
+                newMessage.type === 1;
+
+            let isRelevant = false;
+
+            if (isActiveChatPeople && !isMessageRoom) {
+                isRelevant =
+                    newMessage.to === activeChat.name ||
+                    newMessage.name === activeChat.name ||
+                    newMessage.receiver === activeChat.name ||
+                    newMessage.sender === activeChat.name;
+            }
+
+            if (isActiveChatRoom && isMessageRoom) {
+                isRelevant =
+                    newMessage.to === activeChat.name ||
+                    newMessage.receiver === activeChat.name;
+            }
+
+            if (!isRelevant) {
+                return;
+            }
+
+            const optimisticIndex = state.messages.findIndex((message) => {
+                const sameTemporaryId =
+                    newMessage.tempId &&
+                    message.tempId === newMessage.tempId;
+
+                const samePendingContent =
+                    message.status === "sending" &&
+                    message.mes === newMessage.mes &&
+                    message.to === newMessage.to;
+
+                return sameTemporaryId || samePendingContent;
+            });
+
+            if (optimisticIndex !== -1) {
+                state.messages[optimisticIndex] = {
+                    ...state.messages[optimisticIndex],
+                    ...newMessage,
+                    mes: getMessageText(newMessage),
+                    content: getMessageText(newMessage),
+                    recalled: isRecalledMessage(newMessage),
+                    edited: newMessage.edited === true,
+                    status: isRecalledMessage(newMessage)
+                        ? "recalled"
+                        : (newMessage.status || "sent")
+                };
+
+                return;
+            }
+
+            const isDuplicate = state.messages.some(
+                (message) =>
+                    (
+                        message.id != null &&
+                        newMessage.id != null &&
+                        String(message.id) === String(newMessage.id)
+                    ) ||
+                    (
+                        message.createAt === newMessage.createAt &&
+                        message.name === newMessage.name &&
+                        message.mes === newMessage.mes
+                    )
+            );
+
+            if (!isDuplicate) {
+                state.messages.push({
+                    ...newMessage,
+                    mes: getMessageText(newMessage),
+                    content: getMessageText(newMessage),
+                    recalled: isRecalledMessage(newMessage),
+                    edited: newMessage.edited === true,
+                    status: isRecalledMessage(newMessage)
+                        ? "recalled"
+                        : (newMessage.status || "sent")
+                });
             }
         },
 
         updateSidebar(state, action) {
             const newMessage = action.payload;
-            const currentUserName = localStorage.getItem('user_name') || '';
 
-            let targetName = null;
-            let targetType = null;
-
-            if (newMessage.type === 'room' || newMessage.type === 1) {
-                targetName = newMessage.to;
-                targetType = 1;
-            } else {
-                targetName = newMessage.name === currentUserName ? newMessage.to : newMessage.name;
-                targetType = 0;
+            if (!newMessage) {
+                return;
             }
 
-            if (!targetName) return;
+            const { targetName, targetType } =
+                getConversationInfoFromMessage(newMessage);
 
-            const index = state.people.findIndex(p => p.name === targetName);
+            if (!targetName) {
+                return;
+            }
+
+            const index = state.people.findIndex(
+                (person) =>
+                    person.name === targetName &&
+                    person.type === targetType
+            );
+
             const updateData = {
-                actionTime: newMessage.createAt || new Date().toISOString(),
-                lastMessage: newMessage.mes || newMessage.text || ''
+                actionTime:
+                    newMessage.createAt ||
+                    newMessage.createdAt ||
+                    new Date().toISOString(),
+                lastMessage: getMessageText(newMessage)
             };
 
             if (index !== -1) {
-                const item = { ...state.people[index], ...updateData };
+                const updatedItem = {
+                    ...state.people[index],
+                    ...updateData
+                };
+
                 state.people.splice(index, 1);
-                state.people.unshift(item);
+                state.people.unshift(updatedItem);
             } else {
                 state.people.unshift({
                     name: targetName,
@@ -132,22 +287,133 @@ const chatSlice = createSlice({
                 });
             }
         },
-        confirmPendingMessage(state) {
-            // Fallback: Nếu server trả status success mà k trả message
-            // Tìm tin nhắn sending cũ nhất hiện tại -> set thành sent
-            const { activeChat, messages } = state;
-            if (!activeChat) return;
 
-            const pendingMsgIndex = messages.findIndex(m =>
-                m.status === 'sending' &&
-                (m.to === activeChat.name || (activeChat.type !== 1 && m.name === activeChat.name))
-            );
+        confirmPendingMessage(state, action) {
+            const confirmedMessage = action.payload;
+            const activeChat = state.activeChat;
 
-            if (pendingMsgIndex !== -1) {
-                messages[pendingMsgIndex].status = 'sent';
+            if (!activeChat) {
+                return;
+            }
+
+            const pendingMessageIndex = state.messages.findIndex((message) => {
+                if (message.status !== "sending") {
+                    return false;
+                }
+
+                if (confirmedMessage) {
+                    return (
+                        message.mes === confirmedMessage.mes &&
+                        message.to === confirmedMessage.to
+                    );
+                }
+
+                return (
+                    message.to === activeChat.name ||
+                    (
+                        activeChat.type !== 1 &&
+                        message.name === activeChat.name
+                    )
+                );
+            });
+
+            if (pendingMessageIndex === -1) {
+                return;
+            }
+
+            if (confirmedMessage) {
+                state.messages[pendingMessageIndex] = {
+                    ...state.messages[pendingMessageIndex],
+                    ...confirmedMessage,
+                    mes: getMessageText(confirmedMessage),
+                    content: getMessageText(confirmedMessage),
+                    recalled: isRecalledMessage(confirmedMessage),
+                    edited: confirmedMessage.edited === true,
+                    status: isRecalledMessage(confirmedMessage)
+                        ? "recalled"
+                        : (confirmedMessage.status || "sent")
+                };
+            } else {
+                state.messages[pendingMessageIndex].status = "sent";
             }
         },
-        // addMessage remains for backward compatibility, but calls the specialized reducers
+
+        recallMessageInState(state, action) {
+            const recalledMessage = action.payload;
+
+            if (!recalledMessage || recalledMessage.id == null) {
+                return;
+            }
+
+            const messageIndex = state.messages.findIndex(
+                (message) =>
+                    message.id != null &&
+                    String(message.id) === String(recalledMessage.id)
+            );
+
+            if (messageIndex === -1) {
+                return;
+            }
+
+            const oldText = getMessageText(state.messages[messageIndex]);
+
+            state.messages[messageIndex] = {
+                ...state.messages[messageIndex],
+                ...recalledMessage,
+                mes: "Tin nhắn đã được thu hồi",
+                content: "Tin nhắn đã được thu hồi",
+                recalled: true,
+                status: "recalled"
+            };
+
+            updateSidebarPreviewIfCurrentMessage(
+                state,
+                oldText,
+                state.messages[messageIndex]
+            );
+        },
+
+        editMessageInState(state, action) {
+            const editedMessage = action.payload;
+
+            if (!editedMessage || editedMessage.id == null) {
+                return;
+            }
+
+            const messageIndex = state.messages.findIndex(
+                (message) =>
+                    message.id != null &&
+                    String(message.id) === String(editedMessage.id)
+            );
+
+            if (messageIndex === -1) {
+                return;
+            }
+
+            if (isRecalledMessage(state.messages[messageIndex])) {
+                return;
+            }
+
+            const oldText = getMessageText(state.messages[messageIndex]);
+            const newText = getMessageText(editedMessage);
+
+            state.messages[messageIndex] = {
+                ...state.messages[messageIndex],
+                ...editedMessage,
+                mes: newText,
+                content: newText,
+                recalled: false,
+                edited: true,
+                status: editedMessage.status || "sent"
+            };
+
+            updateSidebarPreviewIfCurrentMessage(
+                state,
+                oldText,
+                state.messages[messageIndex]
+            );
+        },
+
         addMessage(state, action) {
             chatSlice.caseReducers.upsertMessage(state, action);
             chatSlice.caseReducers.updateSidebar(state, action);
@@ -157,56 +423,86 @@ const chatSlice = createSlice({
             const { messages, page } = action.payload;
             const newMessages = Array.isArray(messages) ? messages : [];
 
-            // Validate page number
-            const validPage = typeof page === 'number' && page > 0 ? page : 1;
+            const validPage =
+                typeof page === "number" && page > 0
+                    ? page
+                    : 1;
 
-            // Đảo ngược để có thứ tự: Cũ nhất -> Mới nhất
-            const processedMessages = [...newMessages].reverse();
+            const processedMessages = [...newMessages]
+                .reverse()
+                .map((message) => ({
+                    ...message,
+                    mes: getMessageText(message),
+                    content: getMessageText(message),
+                    recalled: isRecalledMessage(message),
+                    edited:
+                        !isRecalledMessage(message) &&
+                        message.edited === true,
+                    status: isRecalledMessage(message)
+                        ? "recalled"
+                        : (message.status || "sent")
+                }));
 
             if (validPage === 1) {
-                // Trang đầu tiên: thay thế toàn bộ
                 state.messages = processedMessages;
             } else if (newMessages.length > 0) {
-                // Trang > 1 và có data: thêm vào đầu
-                state.messages = [...processedMessages, ...state.messages];
+                state.messages = [
+                    ...processedMessages,
+                    ...state.messages
+                ];
             }
 
-            // Nếu server trả về mảng rỗng → Hết dữ liệu
             if (newMessages.length === 0) {
                 state.hasMore = false;
             }
         },
+
         clearMessages(state) {
             state.messages = [];
         },
+
         clearChat(state) {
             state.messages = [];
             state.activeChat = null;
         },
+
         setPendingRoomCreation(state, action) {
             state.pendingRoomCreation = action.payload;
         },
+
         clearPendingRoomCreation(state) {
             state.pendingRoomCreation = null;
         },
+
         setPendingPage(state, action) {
             state.pendingPage = action.payload;
         },
+
         updateRoomData(state, action) {
             const { name, userList = [], own } = action.payload;
 
-            // Hợp nhất own vào userList nếu chưa có
             let finalUserList = [...userList];
+
             if (own) {
-                const ownerExists = finalUserList.some(u =>
-                    (typeof u === 'string' ? u : u.name) === own
+                const ownerExists = finalUserList.some(
+                    (user) =>
+                        (typeof user === "string" ? user : user.name) === own
                 );
+
                 if (!ownerExists) {
-                    finalUserList.unshift({ name: own, isOwner: true });
+                    finalUserList.unshift({
+                        name: own,
+                        isOwner: true
+                    });
                 }
             }
 
-            const index = state.people.findIndex(p => p.name === name && p.type === 1);
+            const index = state.people.findIndex(
+                (person) =>
+                    person.name === name &&
+                    person.type === 1
+            );
+
             if (index !== -1) {
                 state.people[index].userList = finalUserList;
                 state.people[index].own = own;
@@ -220,23 +516,44 @@ const chatSlice = createSlice({
                 });
             }
         },
+
         setPendingConversations(state, action) {
             state.pendingConversations = action.payload ?? [];
         },
+
         removePendingConversation(state, action) {
             const { username } = action.payload;
-            state.pendingConversations = state.pendingConversations.filter(
-                p => p.username !== username && p.name !== username
-            );
-        },
-    },
+
+            state.pendingConversations =
+                state.pendingConversations.filter(
+                    (conversation) =>
+                        conversation.username !== username &&
+                        conversation.name !== username
+                );
+        }
+    }
 });
 
 export const {
-    setPeople, setActiveChat, setMessages, addMessage, upsertMessage, updateSidebar,
-    setChatHistory, clearChat, setOnlineStatus, clearMessages,
-    setPendingRoomCreation, clearPendingRoomCreation,
-    setPendingPage, updateRoomData, setPendingConversations, removePendingConversation, confirmPendingMessage
+    setPeople,
+    setActiveChat,
+    setMessages,
+    addMessage,
+    upsertMessage,
+    updateSidebar,
+    setChatHistory,
+    clearChat,
+    setOnlineStatus,
+    clearMessages,
+    setPendingRoomCreation,
+    clearPendingRoomCreation,
+    setPendingPage,
+    updateRoomData,
+    setPendingConversations,
+    removePendingConversation,
+    confirmPendingMessage,
+    recallMessageInState,
+    editMessageInState
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

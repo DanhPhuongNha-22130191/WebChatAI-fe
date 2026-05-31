@@ -8,7 +8,9 @@ import {
 
 import {
     handleSendChat,
-    handleGetChatHistory
+    handleGetChatHistory,
+    handleRecallMessage,
+    handleEditMessage
 } from "./handlers/chatHandlers";
 
 import {
@@ -81,6 +83,14 @@ export const handleSocketMessage = (
 
         case "SEND_CHAT":
             handleSendChat(response, dispatch, socketActions, socketRef);
+            break;
+
+        case "RECALL_MESSAGE":
+            handleRecallMessage(response, dispatch, socketActions, socketRef);
+            break;
+
+        case "EDIT_MESSAGE":
+            handleEditMessage(response, dispatch, socketActions, socketRef);
             break;
 
         case "GET_PEOPLE_CHAT_MES":

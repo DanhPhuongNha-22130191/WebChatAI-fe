@@ -2,18 +2,44 @@ import {
     addMessage,
     updateRoomData,
     setChatHistory,
-    confirmPendingMessage
+    confirmPendingMessage,
+    recallMessageInState,
+    editMessageInState
 } from "../../state/chat/chatSlice";
 
 const normalizeMessage = (raw) => {
     if (!raw) return null;
 
-    const rawMessageText = raw.mes ?? raw.content ?? raw.text ?? "";
-    const messageText = rawMessageText == null ? "" : String(rawMessageText);
+    const isRecalled =
+        raw.recalled === true ||
+        raw.status === "recalled";
 
-    const senderName = raw.name ?? raw.sender ?? raw.from ?? "";
-    const receiverName = raw.to ?? raw.receiver ?? "";
-    const createdAt = raw.createAt ?? raw.createdAt ?? raw.time ?? new Date().toISOString();
+    const isEdited = raw.edited === true;
+
+    const rawMessageText = isRecalled
+        ? "Tin nhắn đã được thu hồi"
+        : (raw.mes ?? raw.content ?? raw.text ?? "");
+
+    const messageText = rawMessageText == null
+        ? ""
+        : String(rawMessageText);
+
+    const senderName =
+        raw.name ??
+        raw.sender ??
+        raw.from ??
+        "";
+
+    const receiverName =
+        raw.to ??
+        raw.receiver ??
+        "";
+
+    const createdAt =
+        raw.createAt ??
+        raw.createdAt ??
+        raw.time ??
+        new Date().toISOString();
 
     return {
         ...raw,
@@ -22,15 +48,24 @@ const normalizeMessage = (raw) => {
         to: receiverName,
         receiver: raw.receiver ?? receiverName,
         mes: messageText,
-        content: raw.content ?? messageText,
+        content: messageText,
         createAt: createdAt,
         createdAt,
         type: raw.type ?? "people",
-        status: raw.status || "sent"
+        recalled: isRecalled,
+        edited: isEdited,
+        status: isRecalled
+            ? "recalled"
+            : (raw.status || "sent")
     };
 };
 
-export const handleSendChat = (response, dispatch, socketActions, socketRef) => {
+export const handleSendChat = (
+    response,
+    dispatch,
+    socketActions,
+    socketRef
+) => {
     console.log("SEND_CHAT response:", response);
 
     if (response.status !== "success" && response.status !== true) {
@@ -40,8 +75,13 @@ export const handleSendChat = (response, dispatch, socketActions, socketRef) => 
 
     const normalizedMessage = normalizeMessage(response.data);
 
+    /*
+     * Người gửi đã có tin nhắn tạm trên giao diện.
+     * Khi backend trả Message sent, cập nhật tin nhắn tạm
+     * thành tin nhắn thật để có id trong database.
+     */
     if (response.mes === "Message sent") {
-        dispatch(confirmPendingMessage());
+        dispatch(confirmPendingMessage(normalizedMessage));
     } else if (response.mes === "New message") {
         if (normalizedMessage && normalizedMessage.mes !== undefined) {
             dispatch(addMessage(normalizedMessage));
@@ -53,13 +93,99 @@ export const handleSendChat = (response, dispatch, socketActions, socketRef) => 
     }, 500);
 };
 
-export const handleGetChatHistory = (response, dispatch, getState) => {
-    if (response.status !== "success") {
-        console.error(`[Socket] Lấy lịch sử chat thất bại (${response.event}):`, response.mes);
+export const handleRecallMessage = (
+    response,
+    dispatch,
+    socketActions,
+    socketRef
+) => {
+    console.log("RECALL_MESSAGE response:", response);
+
+    if (response.status !== "success" && response.status !== true) {
+        console.error("Thu hồi tin nhắn thất bại:", response.mes || response);
+        alert(response.mes || "Không thể thu hồi tin nhắn");
         return;
     }
 
-    const state = getState && typeof getState === "function" ? getState() : {};
+    const recalledMessage = normalizeMessage(response.data);
+
+    if (!recalledMessage || !recalledMessage.id) {
+        console.error(
+            "Dữ liệu tin nhắn thu hồi không hợp lệ:",
+            response.data
+        );
+        return;
+    }
+
+    /*
+     * Dùng chung cho:
+     * - Người gửi vừa bấm thu hồi
+     * - Người nhận nhận realtime từ backend
+     */
+    dispatch(recallMessageInState(recalledMessage));
+
+    setTimeout(() => {
+        socketActions.getUserList(socketRef);
+    }, 300);
+};
+
+export const handleEditMessage = (
+    response,
+    dispatch,
+    socketActions,
+    socketRef
+) => {
+    console.log("EDIT_MESSAGE response:", response);
+
+    if (response.status !== "success" && response.status !== true) {
+        console.error(
+            "Chỉnh sửa tin nhắn thất bại:",
+            response.mes || response
+        );
+        alert(response.mes || "Không thể chỉnh sửa tin nhắn");
+        return;
+    }
+
+    const editedMessage = normalizeMessage(response.data);
+
+    if (!editedMessage || !editedMessage.id) {
+        console.error(
+            "Dữ liệu tin nhắn chỉnh sửa không hợp lệ:",
+            response.data
+        );
+        return;
+    }
+
+    /*
+     * Dùng chung cho:
+     * - Người gửi vừa lưu nội dung chỉnh sửa
+     * - Người nhận / thành viên nhóm nhận realtime
+     */
+    dispatch(editMessageInState(editedMessage));
+
+    setTimeout(() => {
+        socketActions.getUserList(socketRef);
+    }, 300);
+};
+
+export const handleGetChatHistory = (
+    response,
+    dispatch,
+    getState
+) => {
+    if (response.status !== "success") {
+        console.error(
+            `[Socket] Lấy lịch sử chat thất bại (${response.event}):`,
+            response.mes
+        );
+        return;
+    }
+
+    const state =
+        getState && typeof getState === "function"
+            ? getState()
+            : {};
+
     const currentPage = state.chat?.pendingPage || 1;
 
     let messages = [];
@@ -71,9 +197,14 @@ export const handleGetChatHistory = (response, dispatch, getState) => {
                 ? response.data
                 : [];
 
-        messages = rawMessages.map(normalizeMessage).filter(Boolean);
+        messages = rawMessages
+            .map(normalizeMessage)
+            .filter(Boolean);
 
-        if (response.data?.name && (response.data?.userList || response.data?.own)) {
+        if (
+            response.data?.name &&
+            (response.data?.userList || response.data?.own)
+        ) {
             dispatch(updateRoomData({
                 name: response.data.name,
                 own: response.data.own,
@@ -82,11 +213,15 @@ export const handleGetChatHistory = (response, dispatch, getState) => {
         }
     } else {
         messages = Array.isArray(response.data)
-            ? response.data.map(normalizeMessage).filter(Boolean)
+            ? response.data
+                .map(normalizeMessage)
+                .filter(Boolean)
             : [];
     }
 
-    console.log(`[Socket] Nhận lịch sử chat (${response.event}) - Page: ${currentPage}, Count: ${messages.length}`);
+    console.log(
+        `[Socket] Nhận lịch sử chat (${response.event}) - Page: ${currentPage}, Count: ${messages.length}`
+    );
 
     dispatch(setChatHistory({
         messages,

@@ -68,6 +68,19 @@ export const socketActions = {
         });
     },
 
+    recallMessage: (socketRef, messageId) => {
+        sendRawData(socketRef, "RECALL_MESSAGE", {
+            messageId
+        });
+    },
+
+    editMessage: (socketRef, messageId, newContent) => {
+        sendRawData(socketRef, "EDIT_MESSAGE", {
+            messageId,
+            content: newContent
+        });
+    },
+
     chatHistory: (socketRef, to, page = 1) => {
         sendRawData(socketRef, "GET_PEOPLE_CHAT_MES", {
             name: to,
@@ -107,7 +120,6 @@ export const socketActions = {
         });
     },
 
-    // Đổi tên phòng chat nhóm
     renameRoom: (socketRef, oldName, newName) => {
         sendRawData(socketRef, "RENAME_ROOM", {
             oldName,
@@ -115,7 +127,6 @@ export const socketActions = {
         });
     },
 
-    // Rời khỏi phòng chat nhóm
     leaveRoom: (socketRef, roomName) => {
         sendRawData(socketRef, "LEAVE_ROOM", {
             name: roomName
