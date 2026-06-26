@@ -81,17 +81,39 @@ export const socketActions = {
         });
     },
 
-    chatHistory: (socketRef, to, page = 1) => {
+    chatHistory: (socketRef, to, page = 1, size = 30) => {
         sendRawData(socketRef, "GET_PEOPLE_CHAT_MES", {
             name: to,
-            page
+            page,
+            size
         });
     },
 
-    roomHistory: (socketRef, roomName, page = 1) => {
+    roomHistory: (socketRef, roomName, page = 1, size = 30) => {
         sendRawData(socketRef, "GET_ROOM_CHAT_MES", {
             name: roomName,
-            page
+            page,
+            size
+        });
+    },
+
+    markRead: (socketRef, messageId) => {
+        sendRawData(socketRef, "MARK_READ", {
+            messageId
+        });
+    },
+
+    typing: (socketRef, to, chatType = "people") => {
+        sendRawData(socketRef, "TYPING", {
+            type: chatType,
+            to
+        });
+    },
+
+    stopTyping: (socketRef, to, chatType = "people") => {
+        sendRawData(socketRef, "STOP_TYPING", {
+            type: chatType,
+            to
         });
     },
 

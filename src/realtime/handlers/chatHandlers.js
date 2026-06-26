@@ -4,7 +4,9 @@ import {
     setChatHistory,
     confirmPendingMessage,
     recallMessageInState,
-    editMessageInState
+    editMessageInState,
+    updateMessageStatus,
+    setTypingState
 } from "../../state/chat/chatSlice";
 
 const normalizeMessage = (raw) => {
@@ -190,9 +192,14 @@ export const handleGetChatHistory = (
 
     let messages = [];
 
+    let hasMore;
+    let responsePage;
+
     if (response.event === "GET_ROOM_CHAT_MES") {
         const rawMessages = Array.isArray(response.data?.chatData)
             ? response.data.chatData
+            : Array.isArray(response.data?.messages)
+                ? response.data.messages
             : Array.isArray(response.data)
                 ? response.data
                 : [];
@@ -200,6 +207,8 @@ export const handleGetChatHistory = (
         messages = rawMessages
             .map(normalizeMessage)
             .filter(Boolean);
+        hasMore = response.data?.hasMore;
+        responsePage = response.data?.page;
 
         if (
             response.data?.name &&
@@ -212,11 +221,19 @@ export const handleGetChatHistory = (
             }));
         }
     } else {
-        messages = Array.isArray(response.data)
-            ? response.data
+        const rawMessages = Array.isArray(response.data?.messages)
+            ? response.data.messages
+            : Array.isArray(response.data)
+                ? response.data
+                : [];
+
+        messages = Array.isArray(rawMessages)
+            ? rawMessages
                 .map(normalizeMessage)
                 .filter(Boolean)
             : [];
+        hasMore = response.data?.hasMore;
+        responsePage = response.data?.page;
     }
 
     console.log(
@@ -225,6 +242,51 @@ export const handleGetChatHistory = (
 
     dispatch(setChatHistory({
         messages,
-        page: currentPage
+        page: responsePage || currentPage,
+        hasMore
+    }));
+};
+
+export const handleMessageStatus = (response, dispatch) => {
+    if (response.status !== "success") {
+        return;
+    }
+
+    const normalizedMessage = normalizeMessage(response.data);
+    dispatch(updateMessageStatus(normalizedMessage));
+};
+
+export const handleTyping = (response, dispatch, getState) => {
+    if (response.status !== "success" || !response.data) {
+        return;
+    }
+
+    const state =
+        getState && typeof getState === "function"
+            ? getState()
+            : {};
+
+    const currentUsername =
+        state.auth?.user?.user ||
+        state.auth?.user?.username ||
+        sessionStorage.getItem("user_name") ||
+        localStorage.getItem("user_name") ||
+        "";
+
+    const username = response.data.from || response.data.name;
+
+    if (!username || username === currentUsername) {
+        return;
+    }
+
+    const isRoom = response.data.type === "room" || response.data.type === 1;
+    const conversationKey = isRoom
+        ? `room:${response.data.to}`
+        : `people:${username}`;
+
+    dispatch(setTypingState({
+        conversationKey,
+        username,
+        typing: response.event === "TYPING" || response.data.typing === true
     }));
 };
