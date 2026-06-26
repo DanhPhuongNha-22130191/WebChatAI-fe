@@ -9,6 +9,7 @@ const initialState = {
     hasMore: true,
     pendingPage: 1,
     pendingConversations: [],
+    typingUsers: {},
 };
 
 const isRecalledMessage = (message) => {
@@ -414,13 +415,38 @@ const chatSlice = createSlice({
             );
         },
 
+        updateMessageStatus(state, action) {
+            const updatedMessage = action.payload;
+
+            if (!updatedMessage || updatedMessage.id == null) {
+                return;
+            }
+
+            const messageIndex = state.messages.findIndex(
+                (message) =>
+                    message.id != null &&
+                    String(message.id) === String(updatedMessage.id)
+            );
+
+            if (messageIndex === -1) {
+                return;
+            }
+
+            state.messages[messageIndex] = {
+                ...state.messages[messageIndex],
+                status: updatedMessage.status || state.messages[messageIndex].status,
+                deliveredAt: updatedMessage.deliveredAt ?? state.messages[messageIndex].deliveredAt,
+                readAt: updatedMessage.readAt ?? state.messages[messageIndex].readAt
+            };
+        },
+
         addMessage(state, action) {
             chatSlice.caseReducers.upsertMessage(state, action);
             chatSlice.caseReducers.updateSidebar(state, action);
         },
 
         setChatHistory(state, action) {
-            const { messages, page } = action.payload;
+            const { messages, page, hasMore } = action.payload;
             const newMessages = Array.isArray(messages) ? messages : [];
 
             const validPage =
@@ -452,7 +478,9 @@ const chatSlice = createSlice({
                 ];
             }
 
-            if (newMessages.length === 0) {
+            if (typeof hasMore === "boolean") {
+                state.hasMore = hasMore;
+            } else if (newMessages.length === 0) {
                 state.hasMore = false;
             }
         },
@@ -521,6 +549,26 @@ const chatSlice = createSlice({
             state.pendingConversations = action.payload ?? [];
         },
 
+        setTypingState(state, action) {
+            const { conversationKey, username, typing } = action.payload;
+
+            if (!conversationKey || !username) {
+                return;
+            }
+
+            const currentUsers = state.typingUsers[conversationKey] ?? [];
+
+            if (typing) {
+                if (!currentUsers.includes(username)) {
+                    state.typingUsers[conversationKey] = [...currentUsers, username];
+                }
+            } else {
+                state.typingUsers[conversationKey] = currentUsers.filter(
+                    (name) => name !== username
+                );
+            }
+        },
+
         removePendingConversation(state, action) {
             const { username } = action.payload;
 
@@ -553,7 +601,9 @@ export const {
     removePendingConversation,
     confirmPendingMessage,
     recallMessageInState,
-    editMessageInState
+    editMessageInState,
+    updateMessageStatus,
+    setTypingState
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

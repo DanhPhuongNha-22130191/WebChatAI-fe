@@ -24,6 +24,7 @@ export const useChatMessage = () => {
     const people = useSelector((state) => state.chat.people);
     const user = useSelector((state) => state.auth.user);
     const hasMore = useSelector((state) => state.chat.hasMore);
+    const typingUsers = useSelector((state) => state.chat.typingUsers);
 
     // -- Local State --
     const [showInfo, setShowInfo] = useState(false);
@@ -50,6 +51,7 @@ export const useChatMessage = () => {
     // -- Refs --
     const lastFetchedKeyRef = useRef(''); // Để tránh fetch trùng lặp khi re-render
     const currentPageRef = useRef(1); // Track page hiện tại để tránh mất sync với server response
+    const typingTimeoutRef = useRef(null);
 
     // -- Derived Data --
     const myUsername = useMemo(() => {
@@ -103,6 +105,22 @@ export const useChatMessage = () => {
             });
         }
     }, [activeChat, people, onlineStatus, user]);
+
+    const activeConversationKey = useMemo(() => {
+        if (!activeChat) return "";
+
+        const isPeople =
+            activeChat.type === 0 ||
+            activeChat.type === "people";
+
+        return `${isPeople ? "people" : "room"}:${activeChat.name}`;
+    }, [activeChat]);
+
+    const activeTypingUsers = useMemo(() => {
+        return activeConversationKey
+            ? typingUsers[activeConversationKey] ?? []
+            : [];
+    }, [activeConversationKey, typingUsers]);
 
 
     // -- Effects --
@@ -167,6 +185,49 @@ export const useChatMessage = () => {
             queueMicrotask(() => setIsLoading(false));
         }
     }, [messages.length, hasMore, page, isLoading]);
+
+    useEffect(() => {
+        if (!activeChat || !isReady || !socketActions || !myUsername) return;
+
+        messages.forEach((message) => {
+            const isMine =
+                message.name === myUsername ||
+                message.sender === myUsername;
+
+            if (!isMine && message.id && message.status !== "read") {
+                socketActions.markRead(message.id);
+            }
+        });
+    }, [messages, activeChat, isReady, socketActions, myUsername]);
+
+    useEffect(() => {
+        if (!activeChat || !isReady || !socketActions) return;
+
+        const chatType =
+            activeChat.type === 0 || activeChat.type === "people"
+                ? "people"
+                : "room";
+
+        if (inputText.trim()) {
+            socketActions.typing(activeChat.name, chatType);
+
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+            }
+
+            typingTimeoutRef.current = setTimeout(() => {
+                socketActions.stopTyping(activeChat.name, chatType);
+            }, 1200);
+        } else {
+            socketActions.stopTyping(activeChat.name, chatType);
+        }
+
+        return () => {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+            }
+        };
+    }, [inputText, activeChat, isReady, socketActions]);
 
     const loadMore = useCallback(() => {
         if (!hasMore || isLoading || !isReady) return;

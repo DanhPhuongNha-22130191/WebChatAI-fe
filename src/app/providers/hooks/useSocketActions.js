@@ -39,14 +39,29 @@ export const useSocketActions = (socketRef, lastActivityRef) => {
                 socketActions.editMessage(socketRef, messageId, newContent);
             },
 
-            chatHistory: (to, page = 1) => {
+            chatHistory: (to, page = 1, size = 30) => {
                 lastActivityRef.current = Date.now();
-                socketActions.chatHistory(socketRef, to, page);
+                socketActions.chatHistory(socketRef, to, page, size);
             },
 
-            roomHistory: (roomName, page = 1) => {
+            roomHistory: (roomName, page = 1, size = 30) => {
                 lastActivityRef.current = Date.now();
-                socketActions.roomHistory(socketRef, roomName, page);
+                socketActions.roomHistory(socketRef, roomName, page, size);
+            },
+
+            markRead: (messageId) => {
+                lastActivityRef.current = Date.now();
+                socketActions.markRead(socketRef, messageId);
+            },
+
+            typing: (to, chatType = "people") => {
+                lastActivityRef.current = Date.now();
+                socketActions.typing(socketRef, to, chatType);
+            },
+
+            stopTyping: (to, chatType = "people") => {
+                lastActivityRef.current = Date.now();
+                socketActions.stopTyping(socketRef, to, chatType);
             },
 
             createRoom: (roomName) => {

@@ -10,7 +10,9 @@ import {
     handleSendChat,
     handleGetChatHistory,
     handleRecallMessage,
-    handleEditMessage
+    handleEditMessage,
+    handleMessageStatus,
+    handleTyping
 } from "./handlers/chatHandlers";
 
 import {
@@ -91,6 +93,16 @@ export const handleSocketMessage = (
 
         case "EDIT_MESSAGE":
             handleEditMessage(response, dispatch, socketActions, socketRef);
+            break;
+
+        case "MESSAGE_STATUS":
+        case "MARK_READ":
+            handleMessageStatus(response, dispatch);
+            break;
+
+        case "TYPING":
+        case "STOP_TYPING":
+            handleTyping(response, dispatch, getState);
             break;
 
         case "GET_PEOPLE_CHAT_MES":
