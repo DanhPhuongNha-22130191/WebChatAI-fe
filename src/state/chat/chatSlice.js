@@ -94,6 +94,30 @@ const chatSlice = createSlice({
   name: "chat",
   initialState,
   reducers: {
+
+    reactMessageInState(state, action) {
+  const updatedMessage = action.payload;
+
+  if (!updatedMessage || updatedMessage.id == null) {
+    return;
+  }
+
+  const messageIndex = state.messages.findIndex(
+    (message) =>
+      message.id != null &&
+      String(message.id) === String(updatedMessage.id),
+  );
+
+  if (messageIndex === -1) {
+    return;
+  }
+
+  state.messages[messageIndex] = {
+    ...state.messages[messageIndex],
+    reactions: updatedMessage.reactions || [],
+  };
+},
+
     setPeople(state, action) {
       const newPeople = action.payload ?? [];
 
@@ -585,6 +609,7 @@ export const {
   recallMessageInState,
   editMessageInState,
   updateMessageStatus,
+  reactMessageInState,
   setTypingState,
 } = chatSlice.actions;
 
