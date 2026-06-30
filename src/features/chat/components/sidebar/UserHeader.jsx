@@ -2,7 +2,7 @@ import React from 'react';
 import colors from '../../../../shared/constants/colors.js';
 import Button from '../../../../shared/components/Button';
 
-const UserHeader = ({ name, onAdd, onContactRequests }) => (
+const UserHeader = ({ name, onAdd, onContactRequests, pendingContactCount = 0 }) => (
 	<div style={{
 		display: 'flex',
 		justifyContent: 'space-between',
@@ -16,19 +16,42 @@ const UserHeader = ({ name, onAdd, onContactRequests }) => (
 		<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 			{onContactRequests && (
 				<Button
-					onClick={onContactRequests}
-					style={{
-						width: 'auto',
-						minWidth: '120px',
-						padding: '8px 16px',
-						backgroundColor: colors.primaryButton,
-						borderRadius: 8,
-						fontSize: 14,
-						fontWeight: 600
-					}}
-				>
-					Yêu cầu liên hệ
-				</Button>
+    onClick={onContactRequests}
+    style={{
+        width: 'auto',
+        minWidth: '120px',
+        padding: '8px 16px',
+        backgroundColor: colors.primaryButton,
+        borderRadius: 8,
+        fontSize: 14,
+        fontWeight: 600,
+        position: 'relative'
+    }}
+>
+    Yêu cầu liên hệ
+
+    {pendingContactCount > 0 && (
+        <span style={{
+            position: 'absolute',
+            top: -6,
+            right: -6,
+            minWidth: 18,
+            height: 18,
+            padding: '0 5px',
+            borderRadius: 999,
+            backgroundColor: 'red',
+            color: 'white',
+            fontSize: 12,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: '18px'
+        }}>
+            {pendingContactCount}
+        </span>
+    )}
+</Button>
 			)}
 		<button onClick={onAdd} style={{
 			borderRadius: '50%',
