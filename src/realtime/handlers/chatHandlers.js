@@ -6,9 +6,12 @@ import {
   recallMessageInState,
   editMessageInState,
   updateMessageStatus,
+  reactMessageInState,
   setTypingState,
   updateSidebar,
 } from "../../state/chat/chatSlice";
+
+
 
 const normalizeMessage = (raw) => {
   if (!raw) return null;
@@ -45,6 +48,14 @@ const normalizeMessage = (raw) => {
     edited: isEdited,
     status: isRecalled ? "recalled" : raw.status || "sent",
   };
+};
+export const handleReactMessage = (response, dispatch) => {
+  if (response.status !== "success" && response.status !== true) {
+    console.error("Thả cảm xúc thất bại:", response.mes || response);
+    return;
+  }
+
+  dispatch(reactMessageInState(response.data));
 };
 
 export const handleSendChat = (

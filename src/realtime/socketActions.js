@@ -31,6 +31,8 @@ const sendRawData = (socketRef, eventName, dataPayload) => {
     }
 };
 
+
+
 export const socketActions = {
     login: (socketRef, username, password) => {
         sessionStorage.setItem("pending_login_user", username);
@@ -183,5 +185,14 @@ export const socketActions = {
         if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
             socketActions.getUserList(socketRef);
         }
-    }
+    },
+
+    reactMessage: (socketRef, messageId, reaction) => {
+    sendRawData(socketRef, "REACT_MESSAGE", {
+        messageId,
+        reaction
+    });
+}
+
+    
 };
