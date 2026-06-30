@@ -551,14 +551,16 @@ const chatSlice = createSlice({
       }
     },
 
-    removePendingConversation(state, action) {
-      const { username } = action.payload;
+   removePendingConversation(state, action) {
+    const username = action.payload?.username;
 
-      state.pendingConversations = state.pendingConversations.filter(
+    state.pendingConversations = state.pendingConversations.filter(
         (conversation) =>
-          conversation.username !== username && conversation.name !== username,
-      );
-    },
+            conversation.username !== username &&
+            conversation.name !== username &&
+            conversation.fromUsername !== username
+    );
+},
   },
 });
 
