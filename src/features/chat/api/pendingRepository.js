@@ -9,21 +9,20 @@ export const createPendingRepository = (apiActions) => {
         /**
          * Lấy danh sách yêu cầu chờ (Đã map về định dạng sạch cho UI)
          */
-        getIncomingRequests: async (username) => {
-            const data = await apiActions.getIncomingPendingConversations(username);
+       getIncomingRequests: async (username) => {
+    const data = await apiActions.getIncomingPendingConversations(username);
 
-            // Mapping & Filtering: Chuyển đổi từ API response sang UI Entity
-            // Loại bỏ business logic 'PENDING' khỏi UI components
-            return (data || [])
-                .filter(item => item.status === 'PENDING')
-                .map(item => ({
-                    username: item.username,
-                    status: item.status,
-                    createdAt: item.createdAt,
-                    // Bổ sung các field cần thiết cho UI nếu có
-                }));
-        },
-
+    return (data || [])
+        .filter(item => item.status === "PENDING")
+        .map(item => ({
+            id: item.id,
+            username: item.fromUsername,
+            fromUsername: item.fromUsername,
+            toUsername: item.toUsername,
+            status: item.status,
+            createdAt: item.createdAt,
+        }));
+},
         /**
          * Chấp nhận yêu cầu
          */
