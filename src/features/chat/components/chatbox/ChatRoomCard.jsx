@@ -16,6 +16,8 @@ import {
 } from "../../../../shared/utils/stickerUtils";
 import StickerPicker from "./StickerPicker";
 const reactionEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡"];
+import ChatSummaryModal from './ChatSummaryModal.jsx';
+
 const modalStyles = {
   overlay: {
     position: "absolute",
@@ -484,17 +486,18 @@ const ChatRoomCard = ({
   const stickerButtonRef = useRef(null);
   const menuRef = useRef(null);
 
-  const [previewImage, setPreviewImage] = useState(null);
-  const [selectedSticker, setSelectedSticker] = useState(null);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showStickerPicker, setShowStickerPicker] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const [recallingId, setRecallingId] = useState(null);
-  const [recallTargetMessage, setRecallTargetMessage] = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [editTargetMessage, setEditTargetMessage] = useState(null);
-  const [editDraft, setEditDraft] = useState("");
-  const [editError, setEditError] = useState("");
+    const [previewImage, setPreviewImage] = useState(null);
+    const [selectedSticker, setSelectedSticker] = useState(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showStickerPicker, setShowStickerPicker] = useState(false);
+    const [openMenuId, setOpenMenuId] = useState(null);
+    const [recallingId, setRecallingId] = useState(null);
+    const [recallTargetMessage, setRecallTargetMessage] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [editTargetMessage, setEditTargetMessage] = useState(null);
+    const [editDraft, setEditDraft] = useState('');
+    const [editError, setEditError] = useState('');
+    const [summaryOpen, setSummaryOpen] = useState(false);
 
   const currentUsername =
     myUsername ||
@@ -920,6 +923,23 @@ const ChatRoomCard = ({
     );
   };
 
+    const getSummaryConversationType = () => {
+        return isPeopleChat ? 'people' : 'room';
+    };
+
+    const getSummaryTarget = () => {
+        return activeChat?.name || '';
+    };
+
+    const handleOpenSummary = () => {
+        if (!activeChat) return;
+        setSummaryOpen(true);
+    };
+
+    const closeSummaryModal = () => {
+        setSummaryOpen(false);
+    };
+
   const submitMessage = (event) => {
     event.preventDefault();
 
@@ -989,6 +1009,18 @@ const ChatRoomCard = ({
         </div>
 
         <div className={styles.headerRight}>
+                    <button
+                        type="button"
+                        className={`${styles.iconButton} ${styles.aiSummaryButton}`}
+                        title="Tóm tắt cuộc trò chuyện"
+                        onClick={handleOpenSummary}
+                        disabled={!activeChat}
+                    >
+                        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 3l1.7 5.2L19 10l-5.3 1.8L12 17l-1.7-5.2L5 10l5.3-1.8L12 3Z" />
+                            <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" />
+                        </svg>
+                    </button>
           <button type="button" className={styles.iconButton} title="Gọi">
             <svg
               width="24"
@@ -1590,6 +1622,15 @@ const ChatRoomCard = ({
         onClose={closeEditModal}
         onConfirm={confirmEditMessage}
       />
+
+            <ChatSummaryModal
+                isOpen={summaryOpen}
+                onClose={closeSummaryModal}
+                type={getSummaryConversationType()}
+                target={getSummaryTarget()}
+                roomName={isPeopleChat ? `Chat với ${activeChat?.name || ''}` : `Nhóm ${activeChat?.name || ''}`}
+                selectedRoom={activeChat}
+            />
 
       <ImageModal
         imageUrl={previewImage}
