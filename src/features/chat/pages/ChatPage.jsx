@@ -149,9 +149,9 @@ const ChatPage = () => {
     socketActions.checkExist(username);
   };
 
-  const handleSendContactRequest = async (recipientName, message) => {
+  const handleSendContactRequest = async (recipientName) => {
     try {
-      await sendContactRequest(recipientName, message);
+     await sendContactRequest(recipientName);
       setShowContactRequest(false);
       setSearchQuery("");
     } catch (err) {

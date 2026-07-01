@@ -95,7 +95,7 @@ const chatSlice = createSlice({
   initialState,
   reducers: {
 
-    reactMessageInState(state, action) {
+   reactMessageInState(state, action) {
   const updatedMessage = action.payload;
 
   if (!updatedMessage || updatedMessage.id == null) {
@@ -105,7 +105,7 @@ const chatSlice = createSlice({
   const messageIndex = state.messages.findIndex(
     (message) =>
       message.id != null &&
-      String(message.id) === String(updatedMessage.id),
+      String(message.id) === String(updatedMessage.id)
   );
 
   if (messageIndex === -1) {
@@ -114,7 +114,12 @@ const chatSlice = createSlice({
 
   state.messages[messageIndex] = {
     ...state.messages[messageIndex],
-    reactions: updatedMessage.reactions || [],
+    ...updatedMessage,
+    mes: getMessageText(updatedMessage),
+    content: getMessageText(updatedMessage),
+    reactions: Array.isArray(updatedMessage.reactions)
+      ? updatedMessage.reactions
+      : [],
   };
 },
 
