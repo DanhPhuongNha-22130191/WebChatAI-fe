@@ -22,6 +22,169 @@
     flex-shrink: 0;
 }
 
+.quickReactionArea {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+
+    padding-top: 14px;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease;
+    z-index: 9999;
+}
+
+.bubbleLine:hover .quickReactionArea,
+.quickReactionArea:hover {
+    opacity: 1;
+    pointer-events: auto;
+}
+.quickReactionArea {
+    position: absolute;
+    top: calc(100% + 2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease;
+    z-index: 9999;
+}
+
+.quickReactionOwn {
+    right: 0;
+    left: auto;
+    transform: none;
+}
+
+.quickReactionOther {
+    left: 0;
+    right: auto;
+    transform: none;
+}
+
+.bubbleLine:hover .quickReactionArea,
+.quickReactionArea:hover {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.quickReactionPicker {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 7px;
+    background: #fff;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    white-space: nowrap;
+}
+
+.quickReactionPicker::before {
+    display: none;
+}
+
+.reactionButton {
+    width: 23px;
+    height: 23px;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.reactionButton:hover {
+    background: #f3f3f3;
+    transform: scale(1.12);
+}
+
+.reactionButton:focus,
+.reactionButton:focus-visible,
+.reactionButton:active {
+    outline: none;
+    border: none;
+    box-shadow: none;
+}
+
+.removeReactionButton {
+    width: 23px;
+    height: 23px;
+    padding: 0;
+    border: none;
+    outline: none;
+    border-radius: 50%;
+    background: #efefef;
+    font-size: 15px;
+    color: #666;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.removeReactionButton:focus,
+.removeReactionButton:focus-visible,
+.removeReactionButton:active {
+    outline: none;
+    border: none;
+    box-shadow: none;
+}
+
+.reactionList {
+    position: absolute;
+    right: 10px;
+    bottom: -14px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+
+    width: fit-content;
+    max-width: max-content;
+
+    padding: 2px 6px;
+
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 999px;
+
+    box-shadow: 0 1px 4px rgba(0,0,0,.15);
+
+    z-index: 5;
+}
+
+.reactionItem{
+    display:flex;
+    align-items:center;
+    gap:2px;
+
+    font-size:14px;
+}
+
+.reactionCount{
+    font-size:11px;
+    font-weight:600;
+    color:#666;
+}
+.mediaReactionList {
+    right: 8px;
+    bottom: 20px;
+}
+
+.mediaWrapper {
+    position: relative;
+    display: inline-block;
+    padding-bottom: 0;
+    margin-bottom: 10px;
+}
+
 .headerLeft {
     display: flex;
     align-items: center;
@@ -158,7 +321,18 @@
 .messageContent {
     display: flex;
     gap: 10px;
-    max-width: 76%;
+    max-width: 82%;
+    overflow: visible;
+}
+
+.bubbleLine {
+    position: relative;
+    overflow: visible;
+}
+
+.ownMessageColumn,
+.otherMessageColumn {
+    overflow: visible;
 }
 
 .messageRow .messageContent[style*="row-reverse"] {
