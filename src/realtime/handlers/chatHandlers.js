@@ -55,7 +55,9 @@ export const handleReactMessage = (response, dispatch) => {
     return;
   }
 
-  dispatch(reactMessageInState(response.data));
+  const normalizedMessage = normalizeMessage(response.data);
+
+  dispatch(reactMessageInState(normalizedMessage));
 };
 
 export const handleSendChat = (
