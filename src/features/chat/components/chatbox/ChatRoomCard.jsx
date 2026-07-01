@@ -15,6 +15,7 @@ import {
     isStickerMessage
 } from '../../../../shared/utils/stickerUtils';
 import StickerPicker from './StickerPicker';
+import ChatSummaryModal from './ChatSummaryModal.jsx';
 
 const modalStyles = {
     overlay: {
@@ -406,6 +407,7 @@ const ChatRoomCard = ({
     const [editTargetMessage, setEditTargetMessage] = useState(null);
     const [editDraft, setEditDraft] = useState('');
     const [editError, setEditError] = useState('');
+    const [summaryOpen, setSummaryOpen] = useState(false);
 
     const currentUsername =
         myUsername ||
@@ -781,6 +783,23 @@ const ChatRoomCard = ({
         );
     };
 
+    const getSummaryConversationType = () => {
+        return isPeopleChat ? 'people' : 'room';
+    };
+
+    const getSummaryTarget = () => {
+        return activeChat?.name || '';
+    };
+
+    const handleOpenSummary = () => {
+        if (!activeChat) return;
+        setSummaryOpen(true);
+    };
+
+    const closeSummaryModal = () => {
+        setSummaryOpen(false);
+    };
+
     const submitMessage = (event) => {
         event.preventDefault();
 
@@ -843,6 +862,18 @@ const ChatRoomCard = ({
                 </div>
 
                 <div className={styles.headerRight}>
+                    <button
+                        type="button"
+                        className={`${styles.iconButton} ${styles.aiSummaryButton}`}
+                        title="Tóm tắt cuộc trò chuyện"
+                        onClick={handleOpenSummary}
+                        disabled={!activeChat}
+                    >
+                        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 3l1.7 5.2L19 10l-5.3 1.8L12 17l-1.7-5.2L5 10l5.3-1.8L12 3Z" />
+                            <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" />
+                        </svg>
+                    </button>
                     <button type="button" className={styles.iconButton} title="Gọi">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
@@ -1214,6 +1245,15 @@ const ChatRoomCard = ({
                 }}
                 onClose={closeEditModal}
                 onConfirm={confirmEditMessage}
+            />
+
+            <ChatSummaryModal
+                isOpen={summaryOpen}
+                onClose={closeSummaryModal}
+                type={getSummaryConversationType()}
+                target={getSummaryTarget()}
+                roomName={isPeopleChat ? `Chat với ${activeChat?.name || ''}` : `Nhóm ${activeChat?.name || ''}`}
+                selectedRoom={activeChat}
             />
 
             <ImageModal
