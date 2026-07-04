@@ -99,6 +99,22 @@ export const usePendingActions = () => {
     [repository, dispatch],
   );
 
+  const removeContact = useCallback(
+  async (friendUsername) => {
+    try {
+      await repository.removeContact(friendUsername);
+
+      socketActions.getUserList();
+
+      return true;
+    } catch (err) {
+      console.error("[UseCase] Failed to remove contact:", err);
+      throw err;
+    }
+  },
+  [repository, socketActions],
+);
+
   /**
    * Gửi yêu cầu mới
    */
@@ -154,6 +170,7 @@ export const usePendingActions = () => {
     fetchIncomingRequests,
     acceptContact,
     rejectContact,
+    removeContact,
     sendContactRequest,
     // UI State & Actions
     showContactRequest,

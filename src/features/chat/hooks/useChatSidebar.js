@@ -151,13 +151,19 @@ export function useChatSidebar() {
     );
   }, [people, activeChat, onlineStatus, title, searchQuery, activeTab]);
 
-  const selectRoom = useCallback(
-    (r) => {
-      console.log("Selecting room:", r);
-      dispatch(setActiveChat({ name: r.name, type: r.type }));
-    },
-    [dispatch]
-  );
+const selectRoom = useCallback(
+  (r) => {
+    console.log("Selecting room:", r);
+
+    if (!r) {
+      dispatch(setActiveChat(null));
+      return;
+    }
+
+    dispatch(setActiveChat({ name: r.name, type: r.type }));
+  },
+  [dispatch]
+);
 
   const refreshList = useCallback(() => {
     if (isReady) actions.getUserList();

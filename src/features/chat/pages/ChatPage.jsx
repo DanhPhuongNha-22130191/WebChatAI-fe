@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import styles from "./ChatPage.module.css";
 import UserHeader from "../components/sidebar/UserHeader.jsx";
@@ -24,18 +23,27 @@ import LeaveRoomModal from "../components/chatbox/LeaveRoomModal.jsx";
 import PageHeader from "../components/headerChat/PageHeader.jsx"; // Import PageHeader
 import LogoutModal from "../components/headerChat/LogoutModal.jsx"; // Import LogoutModal
 import Iridescence from "../../../shared/components/Iridescence.jsx"; // Hiệu ứng nền
-
+import { useSelector, useDispatch } from "react-redux";
+import {
+  clearMessages,
+  setActiveChat,
+} from "../../../state/chat/chatSlice";
 const ChatPage = () => {
   const navigate = useNavigate();
   const { title, rooms, selectRoom } = useChatSidebar();
   const { actions: socketActions, isReady } = useSocket();
-  const { sendContactRequest, pendingContacts, fetchIncomingRequests } =
-    usePendingActions();
+ const {
+  sendContactRequest,
+  pendingContacts,
+  fetchIncomingRequests,
+  removeContact,
+} = usePendingActions();
 
   const pendingContactCount = pendingContacts?.length || 0;
   const { changeTheme } = useChatTheme(); // Initialize theme management
   const user = useSelector((s) => s.auth.user);
-
+  const [deleteContactTarget, setDeleteContactTarget] = useState(null);
+const dispatch = useDispatch();
   // Hook ChatMessage (Quản lý chi tiết chat: message, member, actions)
   const {
     activeChat,
@@ -163,6 +171,38 @@ const ChatPage = () => {
   const handleOpenContactRequests = () => {
     setShowContactRequests(true);
   };
+
+ const handleDeleteContact = (room) => {
+  if (!room?.name) return;
+  setDeleteContactTarget(room);
+};
+const confirmDeleteContact = async () => {
+  if (!deleteContactTarget?.name) return;
+
+  const deletedRoom = deleteContactTarget;
+
+  try {
+    socketActions.removeContact?.(deletedRoom.name);
+    socketActions.getUserList();
+
+    if (
+      activeChat?.name === deletedRoom.name &&
+      String(activeChat?.type) === String(deletedRoom.type)
+    ) {
+      selectRoom(null);
+      dispatch(setActiveChat(null));
+      dispatch(clearMessages());
+      setShowInfo(false);
+    }
+  } catch (err) {
+    console.error("Xóa liên hệ thất bại:", err);
+  } finally {
+    setDeleteContactTarget(null);
+  }
+};
+const handleViewProfile = (room) => {
+  alert(`Trang cá nhân của ${room.name}`);
+};
 
   // Handler khi click vào user trong danh sách yêu cầu liên hệ
   const handleSelectContactRequest = (username) => {
@@ -345,13 +385,16 @@ const ChatPage = () => {
                 contactError={contactError}
               />
             ) : (
-              <RoomList
-                rooms={filteredRooms}
-                onSelect={selectRoom}
-                searchQuery={searchQuery}
-                onContact={handleContact}
-                contactError={contactError}
-              />
+             <RoomList
+  rooms={filteredRooms}
+  onSelect={selectRoom}
+  searchQuery={searchQuery}
+  onContact={handleContact}
+  contactError={contactError}
+  onDeleteContact={handleDeleteContact}
+  onViewProfile={handleViewProfile}
+  activeRoom={activeChat}
+/>
             )}
           </div>
           <div className={styles["chat-main"]}>
@@ -473,6 +516,42 @@ const ChatPage = () => {
           isLeaving={isLeavingRoom}
         />
       )}
+
+      {deleteContactTarget && (
+  <div className={styles.confirmOverlay}>
+    <div className={styles.confirmModal}>
+      <div className={styles.confirmIcon}>💔</div>
+
+      <h3>Xóa liên hệ?</h3>
+
+      <p>
+        Bạn có chắc muốn xóa liên hệ với{" "}
+        <strong>{deleteContactTarget.name}</strong> không?
+      </p>
+
+      <span>
+        Hai bạn sẽ không thể nhắn tin cho nhau cho đến khi kết bạn lại.
+        Tin nhắn cũ vẫn được giữ.
+      </span>
+
+      <div className={styles.confirmActions}>
+        <button
+          className={styles.cancelButton}
+          onClick={() => setDeleteContactTarget(null)}
+        >
+          Hủy
+        </button>
+
+        <button
+          className={styles.deleteButton}
+          onClick={confirmDeleteContact}
+        >
+          Xóa liên hệ
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Add Member Modal */}
       {showAddMember && activeChat && (

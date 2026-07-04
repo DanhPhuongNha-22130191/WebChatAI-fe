@@ -108,6 +108,11 @@ export const useSocketActions = (socketRef, lastActivityRef) => {
         socketActions.checkExist(socketRef, username);
       },
 
+      removeContact: (username) => {
+  lastActivityRef.current = Date.now();
+  socketActions.removeContact(socketRef, username);
+},
+
       getUserList: () => {
         lastActivityRef.current = Date.now();
         socketActions.getUserList(socketRef);

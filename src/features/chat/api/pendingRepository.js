@@ -37,6 +37,10 @@ export const createPendingRepository = (apiActions) => {
             return await apiActions.deletePendingConversation(fromUsername);
         },
 
+        removeContact: async (friendUsername) => {
+    return await apiActions.removeContact(friendUsername);
+},
+
         /**
          * Tạo yêu cầu mới
          */
