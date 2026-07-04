@@ -4,7 +4,16 @@ import Button from '../../../../shared/components/Button';
 import colors from '../../../../shared/constants/colors';
 import styles from '../../pages/ChatPage.module.css';
 
-const RoomList = ({ rooms, onSelect, searchQuery, onContact, contactError }) => {
+const RoomList = ({
+  rooms,
+  onSelect,
+  searchQuery,
+  onContact,
+  contactError,
+  onDeleteContact,
+  onViewProfile,
+      activeRoom,
+}) => {
 	// Kiểm tra xem có search query và không có khớp chính xác không
 	const hasExactMatch = searchQuery && rooms.some(room =>
 		room.name.toLowerCase() === searchQuery.toLowerCase().trim()
@@ -41,14 +50,16 @@ const RoomList = ({ rooms, onSelect, searchQuery, onContact, contactError }) => 
 				const { key, ...roomProps } = r;
 				return (
 					<RoomCard
-						key={key ?? `${r.type}:${r.name}`}
-						{...roomProps}
-						transparent={true}
-						onClick={() => {
-							console.log('Room clicked:', r);
-							onSelect?.(r);
-						}}
-					/>
+    key={key ?? `${r.type}:${r.name}`}
+    {...roomProps}
+    roomKey={`${r.type}:${r.name}`}
+    selectedRoomKey={`${activeRoom?.type}:${activeRoom?.name}`}
+    onDeleteContact={onDeleteContact}
+    onViewProfile={onViewProfile}
+    onClick={() => {
+        onSelect?.(r);
+    }}
+/>
 				);
 			})}
 			{shouldShowContactButton && (

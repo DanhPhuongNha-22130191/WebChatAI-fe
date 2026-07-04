@@ -181,6 +181,12 @@ export const socketActions = {
         sendRawData(socketRef, "GET_USER_LIST", {});
     },
 
+    removeContact: (socketRef, username) => {
+    sendRawData(socketRef, "REMOVE_CONTACT", {
+        user: username
+    });
+},
+
     ping: (socketRef) => {
         if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
             socketActions.getUserList(socketRef);

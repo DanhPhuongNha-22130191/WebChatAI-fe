@@ -336,6 +336,24 @@ export const ApiProvider = ({ children }) => {
           return response;
         },
 
+        removeContact: async (friendUsername, currentUsername = null) => {
+  const current = currentUsername || username || getStoredUsername();
+
+  if (!current || !friendUsername) {
+    throw new Error("currentUsername and friendUsername are required");
+  }
+
+  const response = await baseActions.post(
+    "/chat/pending-conversations/remove-contact",
+    {
+      fromUsername: current,
+      toUsername: friendUsername,
+    },
+  );
+
+  return response?.data || response;
+},
+
         // Alias cho backward compatibility
         getPendingConversations: async (targetUsername = null) => {
           return baseActions.getIncomingPendingConversations(targetUsername);

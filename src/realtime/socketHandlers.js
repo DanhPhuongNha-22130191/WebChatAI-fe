@@ -34,6 +34,8 @@ import {
   handleCheckUserExist,
 } from "./handlers/userHandlers";
 
+import { setActiveChat, clearMessages } from "../state/chat/chatSlice";
+
 export const handleSocketMessage = (
   response,
   dispatch,
@@ -161,6 +163,30 @@ export const handleSocketMessage = (
     case "REACT_MESSAGE":
       handleReactMessage(response, dispatch);
       break;
+      case "REMOVE_CONTACT":
+case "CONTACT_REMOVED":
+    socketActions.getUserList();
+
+    {
+        const activeChat = getState().chat.activeChat;
+        const data = response.data || {};
+
+        const currentUser =
+            localStorage.getItem("user_name") ||
+            sessionStorage.getItem("user_name");
+
+        const otherUser =
+            data.fromUsername === currentUser
+                ? data.toUsername
+                : data.fromUsername;
+
+        if (activeChat?.name === otherUser) {
+            dispatch(setActiveChat(null));
+            dispatch(clearMessages());
+        }
+    }
+
+    break;
 
     default:
       console.warn("Unknown event:", response.event);
