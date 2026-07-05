@@ -222,6 +222,13 @@ export const useChatMessage = () => {
     });
   }, [messages, activeChat, isReady, socketActions, myUsername]);
 
+  // Effect: Tự động cuộn xuống khi có người đang soạn tin nhắn
+  useEffect(() => {
+    if (activeTypingUsers && activeTypingUsers.length > 0) {
+      scrollToBottom("smooth");
+    }
+  }, [activeTypingUsers, scrollToBottom]);
+
   useEffect(() => {
     if (!activeChat || !isReady || !socketActions) return;
 
@@ -502,5 +509,6 @@ export const useChatMessage = () => {
     handleSelectFile,
     handleRemoveFile,
     handleRetry,
+    activeTypingUsers,
   };
 };

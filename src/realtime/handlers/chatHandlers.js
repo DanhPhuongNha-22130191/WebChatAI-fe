@@ -46,7 +46,7 @@ const normalizeMessage = (raw) => {
     type: raw.type ?? "people",
     recalled: isRecalled,
     edited: isEdited,
-    status: isRecalled ? "recalled" : raw.status || "sent",
+    status: isRecalled ? "recalled" : (raw.status ? String(raw.status).toLowerCase() : "sent"),
   };
 };
 export const handleReactMessage = (response, dispatch) => {
@@ -240,6 +240,7 @@ export const handleMessageStatus = (response, dispatch) => {
 };
 
 export const handleTyping = (response, dispatch, getState) => {
+  console.log("[Socket Handler] Received handleTyping:", response);
   if (response.status !== "success" || !response.data) {
     return;
   }

@@ -232,6 +232,21 @@ const chatSlice = createSlice({
       });
 
       if (optimisticIndex !== -1) {
+        const currentStatus = state.messages[optimisticIndex].status;
+        const newStatus = newMessage.status || "sent";
+
+        const statusPriority = {
+          sending: 0,
+          sent: 1,
+          delivered: 2,
+          read: 3,
+          recalled: 4,
+        };
+
+        const currentPriority = statusPriority[currentStatus] || 0;
+        const newPriority = statusPriority[newStatus] || 1;
+        const shouldUpdateStatus = newPriority > currentPriority;
+
         state.messages[optimisticIndex] = {
           ...state.messages[optimisticIndex],
           ...newMessage,
@@ -241,7 +256,7 @@ const chatSlice = createSlice({
           edited: newMessage.edited === true,
           status: isRecalledMessage(newMessage)
             ? "recalled"
-            : newMessage.status || "sent",
+            : shouldUpdateStatus ? newStatus : currentStatus,
         };
 
         return;
@@ -454,9 +469,24 @@ const chatSlice = createSlice({
         return;
       }
 
+      const currentStatus = state.messages[messageIndex].status;
+      const newStatus = updatedMessage.status || currentStatus;
+
+      const statusPriority = {
+        sending: 0,
+        sent: 1,
+        delivered: 2,
+        read: 3,
+        recalled: 4,
+      };
+
+      const currentPriority = statusPriority[currentStatus] || 0;
+      const newPriority = statusPriority[newStatus] || 1;
+      const shouldUpdateStatus = newPriority > currentPriority;
+
       state.messages[messageIndex] = {
         ...state.messages[messageIndex],
-        status: updatedMessage.status || state.messages[messageIndex].status,
+        status: shouldUpdateStatus ? newStatus : currentStatus,
         deliveredAt:
           updatedMessage.deliveredAt ??
           state.messages[messageIndex].deliveredAt,
@@ -562,6 +592,7 @@ const chatSlice = createSlice({
 
     setTypingState(state, action) {
       const { conversationKey, username, typing } = action.payload;
+      console.log("[Redux] setTypingState:", { conversationKey, username, typing });
 
       if (!conversationKey || !username) {
         return;
