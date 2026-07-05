@@ -68,6 +68,7 @@ const dispatch = useDispatch();
     handleSelectFile,
     handleRemoveFile,
     handleRetry,
+    activeTypingUsers,
   } = useChatMessage();
 
   // States cho phần liên hệ
@@ -420,6 +421,7 @@ const handleViewProfile = (room) => {
                 handleRemoveFile={handleRemoveFile}
                 onRetry={handleRetry}
                 isSocketReady={isReady}
+                activeTypingUsers={activeTypingUsers}
               />
             ) : (
               <ChatPlaceholder />

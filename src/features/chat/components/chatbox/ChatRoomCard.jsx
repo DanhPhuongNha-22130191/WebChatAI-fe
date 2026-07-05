@@ -475,6 +475,7 @@ const ChatRoomCard = ({
   handleRemoveFile,
   onRetry,
   isSocketReady,
+  activeTypingUsers,
 }) => {
   const dispatch = useDispatch();
   const { actions: socketActions } = useSocket();
@@ -1092,16 +1093,7 @@ const ChatRoomCard = ({
             !nextMessage ||
             nextMessage.name !== message.name ||
             !isSameMinute(message.createAt, nextMessage.createAt);
-          const isLastSent =
-            isMe &&
-            (message.status === "sent" || !message.status) &&
-            !messages
-              .slice(index + 1)
-              .some(
-                (next) =>
-                  next.name === currentUsername &&
-                  (next.status === "sent" || !next.status),
-              );
+          const isLastSent = isMe && index === messages.length - 1;
           const canRecall =
             isMe &&
             !isRecalled &&
@@ -1391,7 +1383,11 @@ const ChatRoomCard = ({
                             </button>
                           )}
                           {(message.status === "sent" || !message.status) &&
-                            isLastSent && <span>✓ Đã gửi</span>}
+                            isLastSent && <span>Đã gửi</span>}
+                          {message.status === "delivered" &&
+                            isLastSent && <span style={{ color: "rgba(66, 49, 58, 0.58)" }}>Đã nhận</span>}
+                          {message.status === "read" &&
+                            isLastSent && <span style={{ color: "#2B87FF", fontWeight: "bold" }}>Đã đọc</span>}
                           {message.status === "recalled" && (
                             <span>Đã thu hồi</span>
                           )}
@@ -1404,6 +1400,19 @@ const ChatRoomCard = ({
             </div>
           );
         })}
+
+        {activeTypingUsers && activeTypingUsers.length > 0 && (
+          <div className={styles.typingIndicatorRow}>
+            <div className={styles.typingIndicatorBubble}>
+              <span className={styles.typingUserText}>
+                {activeTypingUsers.join(", ")} {activeTypingUsers.length > 1 ? "đang soạn tin nhắn..." : "đang soạn tin nhắn..."}
+              </span>
+              <span className={styles.typingDots}>
+                <span>•</span><span>•</span><span>•</span>
+              </span>
+            </div>
+          </div>
+        )}
 
         <div ref={messagesEndRef} style={{ height: 1, width: "100%" }} />
       </div>
