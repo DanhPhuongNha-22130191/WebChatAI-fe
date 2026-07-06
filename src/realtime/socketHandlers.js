@@ -32,7 +32,12 @@ import {
   handleGetUserList,
   handleCheckUserOnline,
   handleCheckUserExist,
+  handleGetProfile,
+  handleUpdateProfile,
+  handleProfileUpdated,
 } from "./handlers/userHandlers";
+
+import { handleCallSignal } from "./handlers/callHandlers";
 
 import { setActiveChat, clearMessages } from "../state/chat/chatSlice";
 
@@ -125,6 +130,36 @@ export const handleSocketMessage = (
       handleCheckUserExist(response, dispatch);
       break;
 
+    case "GET_PROFILE":
+      handleGetProfile(response, dispatch);
+      break;
+
+    case "UPDATE_PROFILE":
+      handleUpdateProfile(response, dispatch);
+      socketActions.getUserList(socketRef);
+      break;
+
+    case "PROFILE_UPDATED":
+      handleProfileUpdated(response, dispatch);
+      socketActions.getUserList(socketRef);
+      break;
+
+    case "CALL_INVITE":
+    case "CALL_INVITE_SENT":
+    case "CALL_ACCEPT":
+    case "CALL_ACCEPTED":
+    case "CALL_REJECT":
+    case "CALL_REJECTED":
+    case "CALL_CANCEL":
+    case "CALL_CANCELED":
+    case "CALL_END":
+    case "CALL_ENDED":
+    case "WEBRTC_OFFER":
+    case "WEBRTC_ANSWER":
+    case "WEBRTC_ICE_CANDIDATE":
+      handleCallSignal(response);
+      break;
+
     case "CREATE_ROOM":
       handleCreateRoom(response, dispatch, socketActions, socketRef, getState);
       break;
@@ -165,7 +200,7 @@ export const handleSocketMessage = (
       break;
       case "REMOVE_CONTACT":
 case "CONTACT_REMOVED":
-    socketActions.getUserList();
+    socketActions.getUserList(socketRef);
 
     {
         const activeChat = getState().chat.activeChat;

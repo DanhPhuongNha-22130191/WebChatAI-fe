@@ -177,6 +177,98 @@ export const socketActions = {
         });
     },
 
+    getProfile: (socketRef, username) => {
+        sendRawData(socketRef, "GET_PROFILE", {
+            user: username
+        });
+    },
+
+    updateProfile: (socketRef, profile) => {
+        sendRawData(socketRef, "UPDATE_PROFILE", {
+            displayName: profile?.displayName ?? '',
+            avatar: profile?.avatar ?? '',
+            bio: profile?.bio ?? ''
+        });
+    },
+
+    callInvite: (socketRef, to, callType = "audio", callId) => {
+        sendRawData(socketRef, "CALL_INVITE", {
+            to,
+            callType,
+            callId
+        });
+    },
+
+    callAccept: (socketRef, to, callId, callType = "audio") => {
+        sendRawData(socketRef, "CALL_ACCEPT", {
+            to,
+            callId,
+            callType
+        });
+    },
+
+    callReject: (socketRef, to, callId, reason = "Từ chối cuộc gọi", meta = {}) => {
+        sendRawData(socketRef, "CALL_REJECT", {
+            to,
+            callId,
+            reason,
+            callType: meta.callType || "audio",
+            durationSeconds: meta.durationSeconds || 0,
+            caller: meta.caller,
+            receiver: meta.receiver
+        });
+    },
+
+    callCancel: (socketRef, to, callId, meta = {}) => {
+        sendRawData(socketRef, "CALL_CANCEL", {
+            to,
+            callId,
+            reason: meta.reason || "Không nghe máy",
+            callType: meta.callType || "audio",
+            durationSeconds: meta.durationSeconds || 0,
+            caller: meta.caller,
+            receiver: meta.receiver
+        });
+    },
+
+    callEnd: (socketRef, to, callId, meta = {}) => {
+        sendRawData(socketRef, "CALL_END", {
+            to,
+            callId,
+            reason: meta.reason || "Cuộc gọi đã kết thúc",
+            callType: meta.callType || "audio",
+            durationSeconds: meta.durationSeconds || 0,
+            caller: meta.caller,
+            receiver: meta.receiver
+        });
+    },
+
+    sendWebRTCOffer: (socketRef, to, callId, offer, callType = "audio") => {
+        sendRawData(socketRef, "WEBRTC_OFFER", {
+            to,
+            callId,
+            callType,
+            offer
+        });
+    },
+
+    sendWebRTCAnswer: (socketRef, to, callId, answer, callType = "audio") => {
+        sendRawData(socketRef, "WEBRTC_ANSWER", {
+            to,
+            callId,
+            callType,
+            answer
+        });
+    },
+
+    sendIceCandidate: (socketRef, to, callId, candidate) => {
+        sendRawData(socketRef, "WEBRTC_ICE_CANDIDATE", {
+            to,
+            callId,
+            candidate
+        });
+    },
+
     getUserList: (socketRef) => {
         sendRawData(socketRef, "GET_USER_LIST", {});
     },

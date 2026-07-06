@@ -1,5 +1,5 @@
-import { setPeople, setOnlineStatus } from "../../state/chat/chatSlice";
-import { setError } from "../../state/auth/authSlice";
+import { setPeople, setOnlineStatus, updateProfileInPeople } from "../../state/chat/chatSlice";
+import { setError, setUser } from "../../state/auth/authSlice";
 
 
 export const handleGetUserList = (response, dispatch) => {
@@ -57,5 +57,74 @@ export const handleCheckUserExist = (response, dispatch) => {
         } else {
             dispatch(setError("Người dùng không tồn tại hoặc lỗi kiểm tra."));
         }
+    }
+};
+
+const getProfileUsername = (profile) => (
+    profile?.username ||
+    profile?.user ||
+    profile?.name ||
+    ''
+);
+
+const getCurrentUsername = () => (
+    sessionStorage.getItem("user_name") ||
+    sessionStorage.getItem("current_user") ||
+    localStorage.getItem("user_name") ||
+    localStorage.getItem("current_user") ||
+    ''
+);
+
+const notifyPendingProfileCallback = (profile) => {
+    const username = getProfileUsername(profile);
+    const callbacks = window.__pendingProfileCallbacks || {};
+    const callback = callbacks[username];
+
+    if (callback?.onSuccess) {
+        callback.onSuccess(profile);
+        delete callbacks[username];
+    }
+};
+
+export const handleGetProfile = (response, dispatch) => {
+    if (response.status === 'success' && response.data) {
+        dispatch(updateProfileInPeople(response.data));
+        notifyPendingProfileCallback(response.data);
+    } else {
+        const callbacks = window.__pendingProfileCallbacks || {};
+        Object.values(callbacks).forEach(callback => callback?.onError?.(response.mes || 'Không thể tải hồ sơ.'));
+        window.__pendingProfileCallbacks = {};
+    }
+};
+
+export const handleUpdateProfile = (response, dispatch) => {
+    if (response.status === 'success' && response.data) {
+        const profile = response.data;
+        const username = getProfileUsername(profile);
+        const currentUsername = getCurrentUsername();
+
+        dispatch(updateProfileInPeople(profile));
+
+        if (username && username === currentUsername) {
+            dispatch(setUser({
+                ...profile,
+                user: username,
+                username,
+                name: username,
+            }));
+        }
+
+        window.__pendingProfileUpdate?.onSuccess?.(profile);
+        window.__pendingProfileUpdate = null;
+    } else {
+        window.__pendingProfileUpdate?.onError?.(response.mes || 'Cập nhật hồ sơ thất bại.');
+        window.__pendingProfileUpdate = null;
+    }
+};
+
+export const handleProfileUpdated = (response, dispatch) => {
+    if (response.status === 'success' && response.data) {
+        dispatch(updateProfileInPeople(response.data));
+        notifyPendingProfileCallback(response.data);
     }
 };

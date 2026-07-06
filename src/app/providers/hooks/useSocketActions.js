@@ -108,6 +108,55 @@ export const useSocketActions = (socketRef, lastActivityRef) => {
         socketActions.checkExist(socketRef, username);
       },
 
+      getProfile: (username) => {
+        lastActivityRef.current = Date.now();
+        socketActions.getProfile(socketRef, username);
+      },
+
+      updateProfile: (profile) => {
+        lastActivityRef.current = Date.now();
+        socketActions.updateProfile(socketRef, profile);
+      },
+
+      callInvite: (to, callType = "audio", callId) => {
+        lastActivityRef.current = Date.now();
+        socketActions.callInvite(socketRef, to, callType, callId);
+      },
+
+      callAccept: (to, callId, callType = "audio") => {
+        lastActivityRef.current = Date.now();
+        socketActions.callAccept(socketRef, to, callId, callType);
+      },
+
+      callReject: (to, callId, reason, meta = {}) => {
+        lastActivityRef.current = Date.now();
+        socketActions.callReject(socketRef, to, callId, reason, meta);
+      },
+
+      callCancel: (to, callId, meta = {}) => {
+        lastActivityRef.current = Date.now();
+        socketActions.callCancel(socketRef, to, callId, meta);
+      },
+
+      callEnd: (to, callId, meta = {}) => {
+        lastActivityRef.current = Date.now();
+        socketActions.callEnd(socketRef, to, callId, meta);
+      },
+
+      sendWebRTCOffer: (to, callId, offer, callType = "audio") => {
+        lastActivityRef.current = Date.now();
+        socketActions.sendWebRTCOffer(socketRef, to, callId, offer, callType);
+      },
+
+      sendWebRTCAnswer: (to, callId, answer, callType = "audio") => {
+        lastActivityRef.current = Date.now();
+        socketActions.sendWebRTCAnswer(socketRef, to, callId, answer, callType);
+      },
+
+      sendIceCandidate: (to, callId, candidate) => {
+        socketActions.sendIceCandidate(socketRef, to, callId, candidate);
+      },
+
       removeContact: (username) => {
   lastActivityRef.current = Date.now();
   socketActions.removeContact(socketRef, username);

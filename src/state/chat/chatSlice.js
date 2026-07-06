@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { parseCallLog, getCallLogPreview, serializeCallLog } from "../../shared/utils/callLogUtils.js";
 
 const initialState = {
   messages: [],
@@ -21,7 +22,23 @@ const getMessageText = (message) => {
     return "Tin nhắn đã được thu hồi";
   }
 
+  const callLog = parseCallLog(message);
+
+  if (callLog) {
+    return getCallLogPreview(callLog, getCurrentUsername());
+  }
+
   return message?.mes ?? message?.content ?? message?.text ?? "";
+};
+
+const getStoredMessageText = (message) => {
+  const callLog = parseCallLog(message);
+
+  if (callLog) {
+    return message?.mes ?? message?.content ?? serializeCallLog(callLog);
+  }
+
+  return getMessageText(message);
 };
 
 const getCurrentUsername = () => {
@@ -165,6 +182,46 @@ const chatSlice = createSlice({
       });
     },
 
+    updateProfileInPeople(state, action) {
+      const profile = action.payload || {};
+      const username = profile.username || profile.user || profile.name;
+
+      if (!username) {
+        return;
+      }
+
+      const profilePatch = {
+        username,
+        displayName: profile.displayName || username,
+        avatar: profile.avatar || null,
+        bio: profile.bio || null,
+      };
+
+      state.people = state.people.map((person) => {
+        if ((person.type === 0 || person.type === "people") && person.name === username) {
+          return {
+            ...person,
+            ...profilePatch,
+            name: username,
+          };
+        }
+
+        return person;
+      });
+
+      if (
+        state.activeChat &&
+        (state.activeChat.type === 0 || state.activeChat.type === "people") &&
+        state.activeChat.name === username
+      ) {
+        state.activeChat = {
+          ...state.activeChat,
+          ...profilePatch,
+          name: username,
+        };
+      }
+    },
+
     setOnlineStatus(state, action) {
       const { user, isOnline } = action.payload;
 
@@ -250,8 +307,9 @@ const chatSlice = createSlice({
         state.messages[optimisticIndex] = {
           ...state.messages[optimisticIndex],
           ...newMessage,
-          mes: getMessageText(newMessage),
-          content: getMessageText(newMessage),
+          mes: getStoredMessageText(newMessage),
+          content: getStoredMessageText(newMessage),
+          callLog: parseCallLog(newMessage) || newMessage.callLog || null,
           recalled: isRecalledMessage(newMessage),
           edited: newMessage.edited === true,
           status: isRecalledMessage(newMessage)
@@ -275,8 +333,9 @@ const chatSlice = createSlice({
       if (!isDuplicate) {
         state.messages.push({
           ...newMessage,
-          mes: getMessageText(newMessage),
-          content: getMessageText(newMessage),
+          mes: getStoredMessageText(newMessage),
+          content: getStoredMessageText(newMessage),
+          callLog: parseCallLog(newMessage) || newMessage.callLog || null,
           recalled: isRecalledMessage(newMessage),
           edited: newMessage.edited === true,
           status: isRecalledMessage(newMessage)
@@ -364,8 +423,9 @@ const chatSlice = createSlice({
         state.messages[pendingMessageIndex] = {
           ...state.messages[pendingMessageIndex],
           ...confirmedMessage,
-          mes: getMessageText(confirmedMessage),
-          content: getMessageText(confirmedMessage),
+          mes: getStoredMessageText(confirmedMessage),
+          content: getStoredMessageText(confirmedMessage),
+          callLog: parseCallLog(confirmedMessage) || confirmedMessage.callLog || null,
           recalled: isRecalledMessage(confirmedMessage),
           edited: confirmedMessage.edited === true,
           status: isRecalledMessage(confirmedMessage)
@@ -507,8 +567,9 @@ const chatSlice = createSlice({
 
       const processedMessages = [...newMessages].reverse().map((message) => ({
         ...message,
-        mes: getMessageText(message),
-        content: getMessageText(message),
+        mes: getStoredMessageText(message),
+        content: getStoredMessageText(message),
+        callLog: parseCallLog(message) || message.callLog || null,
         recalled: isRecalledMessage(message),
         edited: !isRecalledMessage(message) && message.edited === true,
         status: isRecalledMessage(message)
@@ -647,6 +708,7 @@ export const {
   updateMessageStatus,
   reactMessageInState,
   setTypingState,
+  updateProfileInPeople,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

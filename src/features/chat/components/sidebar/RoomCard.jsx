@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Card from '../../../../shared/components/Card.jsx';
-import { getAvatarUrl } from '../../../../shared/utils/avatarUtils.js';
+import { getAvatarUrl, getDisplayName } from '../../../../shared/utils/avatarUtils.js';
 import { decodeEmoji } from '../../../../shared/utils/emojiUtils.js';
 import styles from './RoomCard.module.css';
 
@@ -10,6 +10,9 @@ const RoomCard = ({
     lastMessage,
     active,
     badge,
+    displayName,
+    avatar,
+    bio,
     onClick,
     isOnline,
     onDeleteContact,
@@ -19,6 +22,7 @@ roomKey,
 }) => {
     const [openMenu, setOpenMenu] = useState(false);
     const isPeopleChat = type === 0 || type === 'people';
+    const title = getDisplayName({ name, displayName });
    
     React.useEffect(() => {
     setOpenMenu(false);
@@ -43,7 +47,7 @@ roomKey,
                     <button
                         onClick={() => {
                             setOpenMenu(false);
-                            onViewProfile?.({ name, type });
+                            onViewProfile?.({ name, username: name, displayName: title, avatar, bio, type });
                         }}
                     >
                         Xem trang cá nhân
@@ -102,8 +106,8 @@ roomKey,
                             }}
                         >
                             <img
-                                src={getAvatarUrl(name, 48)}
-                                alt={name}
+                                src={getAvatarUrl(title, 48, avatar)}
+                                alt={title}
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             />
                         </div>
@@ -136,7 +140,7 @@ roomKey,
                                     textOverflow: 'ellipsis'
                                 }}
                             >
-                                {name}
+                                {title}
                             </div>
 
                             {badge && (

@@ -1,3 +1,5 @@
+import { parseCallLog, serializeCallLog } from "../../shared/utils/callLogUtils.js";
+
 import {
   addMessage,
   updateRoomData,
@@ -25,6 +27,8 @@ const normalizeMessage = (raw) => {
     : (raw.mes ?? raw.content ?? raw.text ?? "");
 
   const messageText = rawMessageText == null ? "" : String(rawMessageText);
+  const callLog = raw.callLog || parseCallLog(raw) || parseCallLog(messageText);
+  const finalMessageText = callLog ? serializeCallLog(callLog) : messageText;
 
   const senderName = raw.name ?? raw.sender ?? raw.from ?? "";
 
@@ -39,8 +43,9 @@ const normalizeMessage = (raw) => {
     sender: raw.sender ?? senderName,
     to: receiverName,
     receiver: raw.receiver ?? receiverName,
-    mes: messageText,
-    content: messageText,
+    mes: finalMessageText,
+    content: finalMessageText,
+    callLog,
     createAt: createdAt,
     createdAt,
     type: raw.type ?? "people",

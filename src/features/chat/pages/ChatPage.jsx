@@ -15,8 +15,11 @@ import CreateRoomModal from "../components/sidebar/CreateRoomModal.jsx";
 import SearchResult from "../components/sidebar/SearchResult.jsx";
 import ContactRequestModal from "../components/sidebar/ContactRequestModal.jsx";
 import ContactRequestsModal from "../components/sidebar/ContactRequestsModal.jsx";
+import ProfileModal from "../components/sidebar/ProfileModal.jsx";
 import { usePendingActions } from "../hooks/usePendingActions";
 import { useChatTheme } from "../hooks/useChatTheme";
+import { useWebRTCCall } from "../hooks/useWebRTCCall.js";
+import CallModal from "../components/call/CallModal.jsx";
 import AddMemberModal from "../components/chatbox/AddMemberModal.jsx";
 import RenameRoomModal from "../components/chatbox/RenameRoomModal.jsx";
 import LeaveRoomModal from "../components/chatbox/LeaveRoomModal.jsx";
@@ -42,6 +45,17 @@ const ChatPage = () => {
   const pendingContactCount = pendingContacts?.length || 0;
   const { changeTheme } = useChatTheme(); // Initialize theme management
   const user = useSelector((s) => s.auth.user);
+  const currentUsername =
+    user?.username ||
+    user?.user ||
+    user?.name ||
+    localStorage.getItem("user_name") ||
+    sessionStorage.getItem("user_name") ||
+    "";
+  const webRTCCall = useWebRTCCall({
+    socketActions,
+    currentUser: currentUsername,
+  });
   const [deleteContactTarget, setDeleteContactTarget] = useState(null);
 const dispatch = useDispatch();
   // Hook ChatMessage (Quản lý chi tiết chat: message, member, actions)
@@ -86,6 +100,7 @@ const dispatch = useDispatch();
   const [showLeaveRoom, setShowLeaveRoom] = useState(false);
   const [leaveRoomError, setLeaveRoomError] = useState("");
   const [isLeavingRoom, setIsLeavingRoom] = useState(false);
+  const [profileTarget, setProfileTarget] = useState(null);
   useEffect(() => {
     if (!user) return;
 
@@ -202,7 +217,18 @@ const confirmDeleteContact = async () => {
   }
 };
 const handleViewProfile = (room) => {
-  alert(`Trang cá nhân của ${room.name}`);
+  setProfileTarget(room);
+};
+
+const handleOpenMyProfile = () => {
+  const username = user?.username || user?.user || user?.name || localStorage.getItem("user_name");
+
+  setProfileTarget({
+    ...user,
+    name: username,
+    username,
+    user: username,
+  });
 };
 
   // Handler khi click vào user trong danh sách yêu cầu liên hệ
@@ -341,6 +367,29 @@ const handleViewProfile = (room) => {
     socketActions.leaveRoom(activeChat.name);
   };
 
+  const canCallActiveChat =
+    activeChat &&
+    (activeChat.type === 0 || activeChat.type === "people") &&
+    activeChat.name !== currentUsername;
+
+  const handleStartVoiceCall = () => {
+    if (!canCallActiveChat) {
+      window.alert("Hiện tại chỉ hỗ trợ gọi 1-1 với liên hệ khác.");
+      return;
+    }
+
+    webRTCCall.startCall(activeChat.name, "audio");
+  };
+
+  const handleStartVideoCall = () => {
+    if (!canCallActiveChat) {
+      window.alert("Hiện tại chỉ hỗ trợ gọi 1-1 với liên hệ khác.");
+      return;
+    }
+
+    webRTCCall.startCall(activeChat.name, "video");
+  };
+
   return (
     <div className={styles.page}>
       {/* Lớp nền hiệu ứng Iridescence */}
@@ -370,6 +419,8 @@ const handleViewProfile = (room) => {
             {/* Sidebar Header có nút tạo phòng và yêu cầu liên hệ */}
             <UserHeader
               name={title}
+              user={user}
+              onProfile={handleOpenMyProfile}
               onAdd={handleCreateRoom}
               onContactRequests={handleOpenContactRequests}
               pendingContactCount={pendingContactCount}
@@ -422,6 +473,8 @@ const handleViewProfile = (room) => {
                 onRetry={handleRetry}
                 isSocketReady={isReady}
                 activeTypingUsers={activeTypingUsers}
+                onVoiceCall={handleStartVoiceCall}
+                onVideoCall={handleStartVideoCall}
               />
             ) : (
               <ChatPlaceholder />
@@ -491,6 +544,15 @@ const handleViewProfile = (room) => {
         </>
       )}
 
+      {profileTarget && (
+        <ProfileModal
+          target={profileTarget}
+          currentUser={user}
+          actions={socketActions}
+          onClose={() => setProfileTarget(null)}
+        />
+      )}
+
       {/* Logout Confirm Modal */}
       {showLogoutConfirm && (
         <LogoutModal
@@ -554,6 +616,19 @@ const handleViewProfile = (room) => {
     </div>
   </div>
 )}
+
+      <CallModal
+        callState={webRTCCall.callState}
+        localVideoRef={webRTCCall.localVideoRef}
+        remoteVideoRef={webRTCCall.remoteVideoRef}
+        isMicOn={webRTCCall.isMicOn}
+        isCameraOn={webRTCCall.isCameraOn}
+        onAccept={webRTCCall.acceptCall}
+        onReject={webRTCCall.rejectCall}
+        onEnd={webRTCCall.endCall}
+        onToggleMic={webRTCCall.toggleMic}
+        onToggleCamera={webRTCCall.toggleCamera}
+      />
 
       {/* Add Member Modal */}
       {showAddMember && activeChat && (
