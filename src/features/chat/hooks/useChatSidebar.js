@@ -4,6 +4,7 @@ import { useSocket } from "../../../app/providers/useSocket.js";
 import { useApi } from "../../../app/providers/useApi.js";
 import { setActiveChat, setPendingConversations } from "../../../state/chat/chatSlice.js";
 import { PresenceCache } from "../utils/presenceCache.js";
+import { parseCallLog, getCallLogPreview } from "../../../shared/utils/callLogUtils.js";
 
 export function useChatSidebar() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -119,7 +120,9 @@ export function useChatSidebar() {
 
   const rooms = useMemo(() => {
     let list = (people ?? []).map((x) => {
-      const messageText = x.lastMessage || '';
+      const rawMessageText = x.lastMessage || '';
+      const callLog = parseCallLog(rawMessageText);
+      const messageText = callLog ? getCallLogPreview(callLog, title) : rawMessageText;
       const timeText = formatLastMessageTime(x.actionTime);
       const lastMessageDisplay = messageText && timeText
         ? `${messageText} • ${timeText}`
@@ -129,7 +132,11 @@ export function useChatSidebar() {
 
       return {
         key: `${x.type}:${x.name}`,
-        name: isSelf ? "Lưu trữ" : x.name,
+        name: x.name,
+        username: x.username || x.name,
+        displayName: isSelf ? "Lưu trữ" : (x.displayName || x.name),
+        avatar: x.avatar || null,
+        bio: x.bio || '',
         type: x.type, // 0 people, 1 group
         badge: isSelf ? "Cloud" : (x.type === 1 ? "Group" : "People"),
         lastMessage: lastMessageDisplay,
@@ -147,7 +154,8 @@ export function useChatSidebar() {
     if (!searchQuery.trim()) return list;
     const query = searchQuery.toLowerCase();
     return list.filter(room =>
-      room.name.toLowerCase().includes(query)
+      room.name.toLowerCase().includes(query) ||
+      String(room.displayName || '').toLowerCase().includes(query)
     );
   }, [people, activeChat, onlineStatus, title, searchQuery, activeTab]);
 
@@ -160,7 +168,8 @@ const selectRoom = useCallback(
       return;
     }
 
-    dispatch(setActiveChat({ name: r.name, type: r.type }));
+    const { key, active, lastMessage, badge, isOnline, ...chatData } = r;
+    dispatch(setActiveChat(chatData));
   },
   [dispatch]
 );

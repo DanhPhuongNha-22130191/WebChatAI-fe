@@ -1805,3 +1805,78 @@
     20% { opacity: 1; }
     100% { opacity: .2; }
 }
+
+.callLogRow {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 16px 16px;
+}
+
+.callLogCard {
+    width: min(290px, 78%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 20px;
+    background: rgba(48, 48, 52, 0.88);
+    color: #fff;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+}
+
+.callLogIcon {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.callLogInfo {
+    min-width: 0;
+    flex: 1;
+}
+
+.callLogTitle {
+    font-size: 14.5px;
+    font-weight: 800;
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.96);
+}
+
+.callLogDuration {
+    margin-top: 3px;
+    font-size: 12.5px;
+    font-weight: 650;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.callAgainButton {
+    flex: 0 0 auto;
+    height: 36px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.callAgainButton:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(-1px);
+}
+
+.callAgainButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

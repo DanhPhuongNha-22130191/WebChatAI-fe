@@ -8,7 +8,7 @@ import {
   setPendingPage,
 } from "../../../state/chat/chatSlice.js";
 import { encodeEmoji } from "../../../shared/utils/emojiUtils.js";
-import { getAvatarUrl } from "../../../shared/utils/avatarUtils.js";
+import { getAvatarUrl, getDisplayName } from "../../../shared/utils/avatarUtils.js";
 import { useChatScroll } from "./useChatScroll.js";
 import { useChatFileUpload } from "./useChatFileUpload.js";
 import { useChatPresence } from "./useChatPresence.js";
@@ -94,15 +94,17 @@ export const useChatMessage = () => {
     if (activeChat.type === 0 || activeChat.type === "people") {
       return [
         {
-          id: currentUserName, // Dùng tên làm ID
-          name: currentUserName,
-          avatar: getAvatarUrl(currentUserName),
+          id: currentUserName,
+          name: getDisplayName(user) || currentUserName,
+          username: currentUserName,
+          avatar: getAvatarUrl(getDisplayName(user) || currentUserName, 128, user?.avatar),
           isOnline: true,
         },
         {
           id: activeChat.name,
-          name: activeChat.name,
-          avatar: getAvatarUrl(activeChat.name),
+          name: getDisplayName(activeChat),
+          username: activeChat.name,
+          avatar: getAvatarUrl(getDisplayName(activeChat), 128, activeChat.avatar),
           isOnline: !!onlineStatus[activeChat.name],
         },
       ];

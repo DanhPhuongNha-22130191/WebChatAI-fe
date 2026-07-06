@@ -7,8 +7,13 @@ import Loading from "../../../../shared/components/Loading";
 import ImageModal from "../../../../shared/components/ImageModal";
 import { useSocket } from "../../../../app/providers/useSocket.js";
 import { parseRoomInvite } from "../../../../shared/utils/parseRoomInvite.js";
-import { getAvatarUrl } from "../../../../shared/utils/avatarUtils.js";
+import { getAvatarUrl, getDisplayName } from "../../../../shared/utils/avatarUtils.js";
 import { decodeEmoji } from "../../../../shared/utils/emojiUtils.js";
+import {
+  parseCallLog,
+  getCallLogTitle,
+  formatCallDuration,
+} from "../../../../shared/utils/callLogUtils.js";
 import {
   createStickerCode,
   getStickerUrl,
@@ -476,6 +481,8 @@ const ChatRoomCard = ({
   onRetry,
   isSocketReady,
   activeTypingUsers,
+  onVoiceCall,
+  onVideoCall,
 }) => {
   const dispatch = useDispatch();
   const { actions: socketActions } = useSocket();
@@ -507,6 +514,23 @@ const ChatRoomCard = ({
     "";
 
   const isPeopleChat = activeChat?.type === 0 || activeChat?.type === "people";
+  const activeChatTitle = getDisplayName(activeChat);
+
+  const getSenderDisplayName = (senderName) => {
+    if (isPeopleChat && senderName === activeChat?.name) {
+      return activeChatTitle;
+    }
+
+    return senderName;
+  };
+
+  const getSenderAvatar = (senderName, size = 32) => {
+    if (isPeopleChat && senderName === activeChat?.name) {
+      return getAvatarUrl(activeChatTitle, size, activeChat?.avatar);
+    }
+
+    return getAvatarUrl(senderName, size);
+  };
 
   const handleJoinRoom = useCallback(
     (roomName) => {
@@ -778,6 +802,75 @@ const ChatRoomCard = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showEmojiPicker, showStickerPicker, openMenuId]);
 
+  const renderCallLogCard = (callLog) => {
+    if (!callLog) return null;
+
+    const isVideoCall = callLog.callType === "video";
+    const title = getCallLogTitle(callLog, currentUsername);
+    const duration = formatCallDuration(callLog.durationSeconds || 0);
+
+    const handleCallAgain = (event) => {
+      event.stopPropagation();
+
+      if (!isPeopleChat) return;
+
+      if (isVideoCall) {
+        onVideoCall?.();
+      } else {
+        onVoiceCall?.();
+      }
+    };
+
+    return (
+      <div className={styles.callLogCard}>
+        <div className={styles.callLogIcon}>
+          {isVideoCall ? (
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m22 8-6 4 6 4V8Z" />
+              <rect x="2" y="6" width="14" height="12" rx="2" ry="2" />
+            </svg>
+          ) : (
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+          )}
+        </div>
+
+        <div className={styles.callLogInfo}>
+          <div className={styles.callLogTitle}>{title}</div>
+          <div className={styles.callLogDuration}>{duration}</div>
+        </div>
+
+        <button
+          type="button"
+          className={styles.callAgainButton}
+          onClick={handleCallAgain}
+          disabled={!isPeopleChat}
+        >
+          Gọi lại
+        </button>
+      </div>
+    );
+  };
+
   const renderFileMessage = (messageText) => {
     const fileContent = messageText.replace("[FILE]", "");
     const [url, fileName, fileSize] = fileContent.split("|");
@@ -990,8 +1083,8 @@ const ChatRoomCard = ({
         <div className={styles.headerLeft}>
           <div className={styles.avatarContainer}>
             <img
-              src={getAvatarUrl(activeChat.name, 128)}
-              alt={activeChat.name}
+              src={getAvatarUrl(activeChatTitle, 128, activeChat.avatar)}
+              alt={activeChatTitle}
               className={styles.avatar}
             />
             {isPeopleChat && (
@@ -1004,7 +1097,7 @@ const ChatRoomCard = ({
             <h3 className={styles.title}>
               {isPeopleChat && activeChat.name === currentUsername
                 ? "Lưu trữ"
-                : activeChat.name}
+                : activeChatTitle}
             </h3>
           </div>
         </div>
@@ -1022,7 +1115,13 @@ const ChatRoomCard = ({
                             <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15Z" />
                         </svg>
                     </button>
-          <button type="button" className={styles.iconButton} title="Gọi">
+          <button
+            type="button"
+            className={styles.iconButton}
+            title={isPeopleChat ? "Gọi thoại" : "Chỉ hỗ trợ gọi 1-1"}
+            onClick={onVoiceCall}
+            disabled={!isPeopleChat}
+          >
             <svg
               width="24"
               height="24"
@@ -1034,6 +1133,28 @@ const ChatRoomCard = ({
               strokeLinejoin="round"
             >
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            className={styles.iconButton}
+            title={isPeopleChat ? "Gọi video" : "Chỉ hỗ trợ gọi 1-1"}
+            onClick={onVideoCall}
+            disabled={!isPeopleChat}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m22 8-6 4 6 4V8Z" />
+              <rect x="2" y="6" width="14" height="12" rx="2" ry="2" />
             </svg>
           </button>
           <button
@@ -1108,9 +1229,28 @@ const ChatRoomCard = ({
               messageText.startsWith("[FILE]") ||
               isStickerMessage(messageText) ||
               isEmojiOnly(messageText));
+          const callLog = isRecalled ? null : parseCallLog(message);
           const hasMyReaction =
             Array.isArray(message.reactions) &&
             message.reactions.some((item) => item.username === currentUsername);
+
+          if (callLog) {
+            return (
+              <div
+                key={message.id || message.tempId || index}
+                className={styles.messageRow}
+              >
+                {showTimestamp && (
+                  <div className={styles.centerTimestamp}>
+                    {formatTimeFull(message.createAt)}
+                  </div>
+                )}
+                <div className={styles.callLogRow}>
+                  {renderCallLogCard(callLog)}
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div
@@ -1130,11 +1270,11 @@ const ChatRoomCard = ({
                 {!isMe && (
                   <div className={styles.senderAvatarBlock}>
                     <img
-                      src={getAvatarUrl(message.name, 32)}
-                      alt={message.name}
+                      src={getSenderAvatar(message.name, 32)}
+                      alt={getSenderDisplayName(message.name)}
                       className={styles.smallAvatar}
                     />
-                    <span className={styles.senderName}>{message.name}</span>
+                    <span className={styles.senderName}>{getSenderDisplayName(message.name)}</span>
                   </div>
                 )}
 
