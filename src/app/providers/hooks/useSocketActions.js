@@ -93,10 +93,25 @@ export const useSocketActions = (socketRef, lastActivityRef) => {
         socketActions.renameRoom(socketRef, oldName, newName);
       },
 
-      leaveRoom: (roomName) => {
-        lastActivityRef.current = Date.now();
-        socketActions.leaveRoom(socketRef, roomName);
-      },
+    setRoomDeputy: (roomName, username) => {
+  lastActivityRef.current = Date.now();
+  socketActions.setRoomDeputy(socketRef, roomName, username);
+},
+
+removeRoomDeputy: (roomName, username) => {
+  lastActivityRef.current = Date.now();
+  socketActions.removeRoomDeputy(socketRef, roomName, username);
+},
+
+removeRoomMember: (roomName, username) => {
+  lastActivityRef.current = Date.now();
+  socketActions.removeRoomMember(socketRef, roomName, username);
+},
+
+leaveRoom: (roomName, newOwnerUsername) => {
+  lastActivityRef.current = Date.now();
+  socketActions.leaveRoom(socketRef, roomName, newOwnerUsername);
+},
 
       checkOnline: (username) => {
         lastActivityRef.current = Date.now();

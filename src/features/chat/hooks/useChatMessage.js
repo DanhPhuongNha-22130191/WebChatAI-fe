@@ -82,50 +82,88 @@ export const useChatMessage = () => {
     return status;
   }, [activeChat, onlineStatus]);
 
-  const memberList = useMemo(() => {
-    if (!activeChat) return [];
-    const currentUserName =
-      user?.name ||
-      user?.user ||
-      user?.username ||
-      localStorage.getItem("user_name") ||
-      "Tên người dùng";
+ const memberList = useMemo(() => {
+  if (!activeChat) return [];
 
-    if (activeChat.type === 0 || activeChat.type === "people") {
-      return [
-        {
-          id: currentUserName,
-          name: getDisplayName(user) || currentUserName,
-          username: currentUserName,
-          avatar: getAvatarUrl(getDisplayName(user) || currentUserName, 128, user?.avatar),
-          isOnline: true,
-        },
-        {
-          id: activeChat.name,
-          name: getDisplayName(activeChat),
-          username: activeChat.name,
-          avatar: getAvatarUrl(getDisplayName(activeChat), 128, activeChat.avatar),
-          isOnline: !!onlineStatus[activeChat.name],
-        },
-      ];
-    } else {
-      const roomData = people.find(
-        (p) => p.name === activeChat.name && p.type === activeChat.type,
-      );
-      const userList = roomData?.userList || [];
-      return userList.map((m) => {
-        const name = typeof m === "string" ? m : m.name;
-        const isOwner = typeof m === "object" ? m.isOwner : false;
-        return {
-          id: name, // Dùng tên làm ID
-          name,
-          avatar: getAvatarUrl(name),
-          isOnline: !!onlineStatus[name],
-          isOwner,
-        };
-      });
+  const currentUserName =
+    user?.name ||
+    user?.user ||
+    user?.username ||
+    localStorage.getItem("user_name") ||
+    "Tên người dùng";
+
+  if (activeChat.type === 0 || activeChat.type === "people") {
+    return [
+      {
+        id: currentUserName,
+        name: getDisplayName(user) || currentUserName,
+        username: currentUserName,
+        avatar: getAvatarUrl(getDisplayName(user) || currentUserName, 128, user?.avatar),
+        isOnline: true,
+      },
+      {
+        id: activeChat.name,
+        name: getDisplayName(activeChat),
+        username: activeChat.name,
+        avatar: getAvatarUrl(getDisplayName(activeChat), 128, activeChat.avatar),
+        isOnline: !!onlineStatus[activeChat.name],
+      },
+    ];
+  }
+
+  const roomData = people.find(
+    (p) =>
+      p.name === activeChat.name &&
+      (
+        p.type === activeChat.type ||
+        p.type === 1 ||
+        p.type === "room" ||
+        p.type === "group"
+      )
+  );
+
+  const userList = roomData?.userList || roomData?.members || [];
+
+  return userList.map((m) => {
+    if (typeof m === "string") {
+      return {
+        id: m,
+        name: m,
+        username: m,
+        displayName: m,
+        role: "MEMBER",
+        isOwner: false,
+        isDeputy: false,
+        avatar: getAvatarUrl(m),
+        isOnline: !!onlineStatus[m],
+      };
     }
-  }, [activeChat, people, onlineStatus, user]);
+
+    const username = m.username || m.user || m.name || "";
+    const rawRole = String(m.role || "").toUpperCase();
+
+    const role = ["OWNER", "DEPUTY", "MEMBER"].includes(rawRole)
+      ? rawRole
+      : m.isOwner
+        ? "OWNER"
+        : m.isDeputy
+          ? "DEPUTY"
+          : "MEMBER";
+
+    return {
+      ...m,
+      id: username,
+      name: username,
+      username,
+      displayName: m.displayName || username,
+      role,
+      isOwner: role === "OWNER",
+      isDeputy: role === "DEPUTY",
+      avatar: getAvatarUrl(m.displayName || username, 128, m.avatar),
+      isOnline: !!onlineStatus[username],
+    };
+  });
+}, [activeChat, people, onlineStatus, user]);
 
   const activeConversationKey = useMemo(() => {
     if (!activeChat) return "";

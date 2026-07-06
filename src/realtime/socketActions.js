@@ -151,11 +151,34 @@ export const socketActions = {
         });
     },
 
-    leaveRoom: (socketRef, roomName) => {
-        sendRawData(socketRef, "LEAVE_ROOM", {
-            name: roomName
-        });
-    },
+  setRoomDeputy: (socketRef, roomName, username) => {
+    sendRawData(socketRef, "SET_ROOM_DEPUTY", {
+        name: roomName,
+        user: username
+    });
+},
+
+removeRoomDeputy: (socketRef, roomName, username) => {
+    sendRawData(socketRef, "REMOVE_ROOM_DEPUTY", {
+        name: roomName,
+        user: username
+    });
+},
+
+removeRoomMember: (socketRef, roomName, username) => {
+    sendRawData(socketRef, "REMOVE_ROOM_MEMBER", {
+        name: roomName,
+        user: username
+    });
+},
+
+leaveRoom: (socketRef, roomName, newOwnerUsername) => {
+    sendRawData(socketRef, "LEAVE_ROOM", {
+        name: roomName,
+        newOwner: newOwnerUsername,
+        newOwnerUsername
+    });
+},
 
     checkOnline: (socketRef, username) => {
         window.__pendingCheckOnline = username;

@@ -45,6 +45,8 @@ const ChatPage = () => {
   const pendingContactCount = pendingContacts?.length || 0;
   const { changeTheme } = useChatTheme(); // Initialize theme management
   const user = useSelector((s) => s.auth.user);
+  const chatPeople = useSelector((s) => s.chat.people || []);
+  const dispatch = useDispatch();
   const currentUsername =
     user?.username ||
     user?.user ||
@@ -57,7 +59,7 @@ const ChatPage = () => {
     currentUser: currentUsername,
   });
   const [deleteContactTarget, setDeleteContactTarget] = useState(null);
-const dispatch = useDispatch();
+  const [removeMemberTarget, setRemoveMemberTarget] = useState(null);
   // Hook ChatMessage (Quản lý chi tiết chat: message, member, actions)
   const {
     activeChat,
@@ -101,6 +103,7 @@ const dispatch = useDispatch();
   const [leaveRoomError, setLeaveRoomError] = useState("");
   const [isLeavingRoom, setIsLeavingRoom] = useState(false);
   const [profileTarget, setProfileTarget] = useState(null);
+  
   useEffect(() => {
     if (!user) return;
 
@@ -172,6 +175,158 @@ const dispatch = useDispatch();
     // Kiểm tra user có tồn tại không trước khi mở modal
     socketActions.checkExist(username);
   };
+
+const isActiveGroup = useMemo(() => {
+  return !!activeChat && (
+    activeChat.type === 1 ||
+    activeChat.type === "GROUP" ||
+    activeChat.type === "group" ||
+    activeChat.type === "room"
+  );
+}, [activeChat]);
+
+useEffect(() => {
+  if (!activeChat || !isActiveGroup) return;
+  socketActions.getRoomMembers(activeChat.name);
+}, [activeChat?.name, isActiveGroup]);
+
+const activeRoomData = useMemo(() => {
+  if (!isActiveGroup || !activeChat) return null;
+
+  const allRooms = [
+    ...(Array.isArray(chatPeople) ? chatPeople : []), // ưu tiên Redux gốc vì có role/userList
+    ...(Array.isArray(rooms) ? rooms : []),
+    activeChat,
+  ];
+
+  return allRooms.find((item) =>
+    item?.name === activeChat.name &&
+    (
+      item?.type === 1 ||
+      item?.type === "GROUP" ||
+      item?.type === "group" ||
+      item?.type === "room"
+    )
+  ) || activeChat;
+}, [chatPeople, rooms, activeChat, isActiveGroup]);
+
+const normalizeMember = (member) => {
+  if (typeof member === "string") {
+    return {
+      username: member,
+      name: member,
+      displayName: member,
+      role: "MEMBER",
+      isOwner: false,
+      isDeputy: false,
+    };
+  }
+
+  const username = member?.username || member?.user || member?.name || "";
+  const rawRole = String(member?.role || "").toUpperCase();
+
+  let role = ["OWNER", "DEPUTY", "MEMBER"].includes(rawRole)
+    ? rawRole
+    : "";
+
+  if ((!role || role === "MEMBER") && (member?.isOwner === true || member?.own === true)) {
+    role = "OWNER";
+  }
+
+  if ((!role || role === "MEMBER") && member?.isDeputy === true) {
+    role = "DEPUTY";
+  }
+
+  if (!role) role = "MEMBER";
+
+  return {
+    ...member,
+    username,
+    name: username,
+    displayName: member?.displayName || username,
+    role,
+    isOwner: role === "OWNER",
+    isDeputy: role === "DEPUTY",
+  };
+};
+
+const roomMembersForPermission = useMemo(() => {
+  const fromMemberList = Array.isArray(memberList)
+    ? memberList.map(normalizeMember)
+    : [];
+
+  const fromRoomData = [
+    ...(Array.isArray(activeRoomData?.userList) ? activeRoomData.userList : []),
+    ...(Array.isArray(activeRoomData?.members) ? activeRoomData.members : []),
+  ].map(normalizeMember);
+
+  const memberMap = new Map();
+
+  fromMemberList.forEach((member) => {
+    if (member.username) {
+      memberMap.set(member.username, member);
+    }
+  });
+
+  fromRoomData.forEach((member) => {
+    if (!member.username) return;
+
+    const oldMember = memberMap.get(member.username) || {};
+
+    memberMap.set(member.username, {
+      ...oldMember,
+      ...member,
+      role: member.role || oldMember.role || "MEMBER",
+      isOwner: member.isOwner === true || member.role === "OWNER",
+      isDeputy: member.isDeputy === true || member.role === "DEPUTY",
+    });
+  });
+
+  return Array.from(memberMap.values());
+}, [memberList, activeRoomData]);
+
+const currentUserRole = useMemo(() => {
+  if (!isActiveGroup) return "MEMBER";
+
+  const currentMember = roomMembersForPermission.find((member) => {
+    const username = member?.username || member?.user || member?.name;
+    return username === currentUsername;
+  });
+
+  if (currentMember) {
+    const role = String(currentMember.role || "").toUpperCase();
+
+    if (role === "OWNER") return "OWNER";
+    if (role === "DEPUTY") return "DEPUTY";
+
+    return "MEMBER";
+  }
+
+  const ownerUsername =
+    activeRoomData?.ownerUsername ||
+    activeRoomData?.owner ||
+    activeRoomData?.own ||
+    activeChat?.ownerUsername ||
+    activeChat?.owner ||
+    activeChat?.own;
+
+  if (ownerUsername && ownerUsername === currentUsername) {
+    return "OWNER";
+  }
+
+  return "MEMBER";
+}, [
+  isActiveGroup,
+  roomMembersForPermission,
+  currentUsername,
+  activeRoomData,
+  activeChat,
+]);
+
+const getMemberUsername = (member) => {
+  if (typeof member === "string") return member;
+  return member?.username || member?.user || member?.name || "";
+};
 
   const handleSendContactRequest = async (recipientName) => {
     try {
@@ -322,50 +477,99 @@ const handleOpenMyProfile = () => {
     socketActions.renameRoom(activeChat.name, newName);
   };
 
-  const handleLeaveRoomClick = () => {
-    const isGroupChat =
-      activeChat &&
-      (activeChat.type === 1 ||
-        activeChat.type === "room" ||
-        activeChat.type === "group");
+const handleCloseLeaveRoom = () => {
+  if (isLeavingRoom) return;
+  setShowLeaveRoom(false);
+  setLeaveRoomError("");
+  window.__pendingLeaveRoom = null;
+};
 
-    if (!isGroupChat) return;
+const handleLeaveRoomClick = () => {
+  setLeaveRoomError("");
+  setShowLeaveRoom(true);
+};
 
-    setLeaveRoomError("");
-    setIsLeavingRoom(false);
-    setShowLeaveRoom(true);
+const handleConfirmLeaveRoom = (newOwnerUsername) => {
+  if (!activeChat || isLeavingRoom) return;
+
+  setLeaveRoomError("");
+  setIsLeavingRoom(true);
+
+  window.__pendingLeaveRoom = {
+    onSuccess: () => {
+      setIsLeavingRoom(false);
+      setShowLeaveRoom(false);
+      setLeaveRoomError("");
+      setShowInfo(false);
+      window.__pendingLeaveRoom = null;
+    },
+    onError: (message) => {
+      setIsLeavingRoom(false);
+      setLeaveRoomError(message || "Không thể rời khỏi phòng chat.");
+    },
   };
 
-  const handleCloseLeaveRoom = () => {
-    if (isLeavingRoom) return;
+  socketActions.leaveRoom(activeChat.name, newOwnerUsername);
+};
 
-    setShowLeaveRoom(false);
-    setLeaveRoomError("");
-    window.__pendingLeaveRoom = null;
+const registerRoomActionCallback = () => {
+  window.__pendingRoomAction = {
+    onSuccess: () => {
+      if (activeChat?.name) {
+        socketActions.getRoomMembers(activeChat.name);
+      }
+    },
+    onError: (message) => {
+      window.alert(message || "Thao tác phân quyền nhóm thất bại.");
+    },
   };
+};
 
-  const handleConfirmLeaveRoom = () => {
-    if (!activeChat || isLeavingRoom) return;
+const handlePromoteDeputy = (member) => {
+  if (!activeChat?.name) return;
 
-    setLeaveRoomError("");
-    setIsLeavingRoom(true);
+  const username = getMemberUsername(member);
+  if (!username) return;
 
-    window.__pendingLeaveRoom = {
-      onSuccess: () => {
-        setIsLeavingRoom(false);
-        setShowLeaveRoom(false);
-        setLeaveRoomError("");
-        setShowInfo(false);
-        window.__pendingLeaveRoom = null;
-      },
-      onError: (message) => {
-        setIsLeavingRoom(false);
-        setLeaveRoomError(message || "Không thể rời khỏi phòng chat.");
-      },
-    };
+  registerRoomActionCallback();
+  socketActions.setRoomDeputy(activeChat.name, username);
+};
 
-    socketActions.leaveRoom(activeChat.name);
-  };
+const handleDemoteDeputy = (member) => {
+  if (!activeChat?.name) return;
+
+  const username = getMemberUsername(member);
+  if (!username) return;
+
+  registerRoomActionCallback();
+  socketActions.removeRoomDeputy(activeChat.name, username);
+};
+
+const handleRemoveRoomMember = (member) => {
+  if (!activeChat?.name) return;
+
+  const username = getMemberUsername(member);
+  if (!username) return;
+
+  setRemoveMemberTarget({
+    ...member,
+    username,
+    name: username,
+    roomName: activeChat.name,
+    displayName: member?.displayName || member?.name || username,
+  });
+};
+
+const confirmRemoveRoomMember = () => {
+  const roomName = removeMemberTarget?.roomName || activeChat?.name;
+  const username = removeMemberTarget?.username;
+
+  if (!roomName || !username) return;
+
+  registerRoomActionCallback();
+  socketActions.removeRoomMember(roomName, username);
+  setRemoveMemberTarget(null);
+};
 
   const canCallActiveChat =
     activeChat &&
@@ -483,18 +687,19 @@ const handleOpenMyProfile = () => {
           {/* Sidebar thông tin chat (ChatInfo) */}
           {activeChat && showInfo && (
             <div className={styles["chat-info-sidebar"]}>
-              <ChatInfo
-                isGroup={
-                  activeChat.type === 1 ||
-                  activeChat.type === "group" ||
-                  activeChat.type === "room"
-                }
-                members={memberList}
-                onAddMember={handleAddMemberClick}
-                onRename={handleRenameRoom}
-                onLeaveRoom={handleLeaveRoomClick}
-                onChangeTheme={changeTheme}
-              />
+             <ChatInfo
+  isGroup={isActiveGroup}
+  members={roomMembersForPermission}
+  currentUsername={currentUsername}
+  currentUserRole={currentUserRole}
+  onAddMember={handleAddMemberClick}
+  onRename={handleRenameRoom}
+  onLeaveRoom={handleLeaveRoomClick}
+  onPromoteDeputy={handlePromoteDeputy}
+  onDemoteDeputy={handleDemoteDeputy}
+  onRemoveMember={handleRemoveRoomMember}
+  onChangeTheme={changeTheme}
+/>
             </div>
           )}
         </div>
@@ -571,16 +776,62 @@ const handleOpenMyProfile = () => {
         />
       )}
 
-      {showLeaveRoom && activeChat && (
-        <LeaveRoomModal
-          roomName={activeChat.name}
-          onClose={handleCloseLeaveRoom}
-          onConfirm={handleConfirmLeaveRoom}
-          error={leaveRoomError}
-          isLeaving={isLeavingRoom}
-        />
-      )}
+     {showLeaveRoom && activeChat && (
+  <LeaveRoomModal
+    roomName={activeChat.name}
+    onClose={handleCloseLeaveRoom}
+    members={roomMembersForPermission}
+    currentUsername={currentUsername}
+    currentUserRole={currentUserRole}
+    onConfirm={handleConfirmLeaveRoom}
+    error={leaveRoomError}
+    isLeaving={isLeavingRoom}
+  />
+)}
+{removeMemberTarget && (
+  <div
+    className={styles.confirmOverlay}
+    onClick={() => setRemoveMemberTarget(null)}
+  >
+    <div
+      className={styles.confirmModal}
+      onClick={(event) => event.stopPropagation()}
+    >
+      <div className={styles.confirmIcon}>👥</div>
 
+      <h3>Xóa thành viên?</h3>
+
+      <p>
+        Bạn có chắc muốn xóa{" "}
+        <strong>{removeMemberTarget.displayName || removeMemberTarget.username}</strong>{" "}
+        khỏi nhóm{" "}
+        <strong>{removeMemberTarget.roomName || activeChat?.name}</strong> không?
+      </p>
+
+      <span>
+        Thành viên này sẽ không còn xem hoặc nhắn tin trong nhóm cho đến khi được thêm lại.
+      </span>
+
+      <div className={styles.confirmActions}>
+        <button
+          type="button"
+          className={styles.cancelButton}
+          onClick={() => setRemoveMemberTarget(null)}
+        >
+          Hủy
+        </button>
+
+        <button
+          type="button"
+          className={styles.deleteButton}
+          onClick={confirmRemoveRoomMember}
+        >
+          Xóa thành viên
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {deleteContactTarget && (
   <div className={styles.confirmOverlay}>
     <div className={styles.confirmModal}>

@@ -26,6 +26,11 @@ import {
   handleRoomRenamed,
   handleLeaveRoom,
   handleRoomMemberLeft,
+  handleRoomRoleUpdated,
+  handleRemoveRoomMember,
+  handleRoomMemberRemoved,
+  handleRemovedFromRoom,
+  handleRoomOwnerChanged,
 } from "./handlers/roomHandlers";
 
 import {
@@ -179,7 +184,27 @@ export const handleSocketMessage = (
     case "GET_ROOM_MEMBERS":
       handleGetRoomMembers(response, dispatch);
       break;
+case "SET_ROOM_DEPUTY":
+case "REMOVE_ROOM_DEPUTY":
+case "ROOM_ROLE_UPDATED":
+  handleRoomRoleUpdated(response, dispatch, socketActions, socketRef);
+  break;
 
+case "REMOVE_ROOM_MEMBER":
+  handleRemoveRoomMember(response, dispatch, socketActions, socketRef);
+  break;
+
+case "ROOM_MEMBER_REMOVED":
+  handleRoomMemberRemoved(response, dispatch, socketActions, socketRef);
+  break;
+
+case "ROOM_MEMBER_REMOVED_FROM_ROOM":
+  handleRemovedFromRoom(response, dispatch, socketActions, socketRef, getState);
+  break;
+
+case "ROOM_OWNER_CHANGED":
+  handleRoomOwnerChanged(response, dispatch, socketActions, socketRef);
+  break;
     case "RENAME_ROOM":
       handleRenameRoom(response, dispatch, socketActions, socketRef, getState);
       break;
