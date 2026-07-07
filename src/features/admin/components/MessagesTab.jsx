@@ -7,6 +7,7 @@ import {
   removeMessageFromList, updateMessageInList, setError,
 } from '../../../state/admin/adminSlice.js';
 import ConfirmModal from './ConfirmModal.jsx';
+import Pagination from '../../../shared/components/Pagination.jsx';
 import styles from './MessagesTab.module.css';
 
 const MSG_TYPE_OPTIONS = ['', 'TEXT', 'IMAGE', 'VIDEO', 'FILE', 'AUDIO'];
@@ -31,7 +32,7 @@ export default function MessagesTab() {
   const load = async (page = messagesPage, filter = messagesFilter) => {
     dispatch(setMessagesLoading(true));
     try {
-      const res = await adminSvc.searchMessages({ ...filter, page, size: 20 });
+      const res = await adminSvc.searchMessages({ ...filter, page, size: 10 });
       dispatch(setMessages(res?.data || res));
     } catch (err) {
       dispatch(setError(err.message));
@@ -202,16 +203,11 @@ export default function MessagesTab() {
       </div>
 
       {/* Pagination */}
-      {messagesTotalPages > 1 && (
-        <div className={styles.pagination}>
-          <button className={styles.pageBtn} disabled={messagesPage === 0} onClick={() => handlePage(messagesPage - 1)}>← Trước</button>
-          {Array.from({ length: Math.min(messagesTotalPages, 7) }, (_, i) => (
-            <button key={i} className={`${styles.pageBtn} ${i === messagesPage ? styles.pageActive : ''}`} onClick={() => handlePage(i)}>{i + 1}</button>
-          ))}
-          {messagesTotalPages > 7 && <span className={styles.ellipsis}>…</span>}
-          <button className={styles.pageBtn} disabled={messagesPage >= messagesTotalPages - 1} onClick={() => handlePage(messagesPage + 1)}>Sau →</button>
-        </div>
-      )}
+      <Pagination
+        page={messagesPage}
+        totalPages={messagesTotalPages}
+        onPageChange={handlePage}
+      />
 
       {/* Modals */}
       <ConfirmModal

@@ -44,11 +44,11 @@ const adminSlice = createSlice({
     // Users
     setUsersLoading(state, action) { state.usersLoading = action.payload; },
     setUsers(state, action) {
-      const { content, totalPages, totalElements, number } = action.payload;
+      const { content, totalPages, totalElements, page } = action.payload;
       state.users = content;
       state.usersTotalPages = totalPages;
       state.usersTotalElements = totalElements;
-      state.usersPage = number;
+      state.usersPage = page;
     },
     setUsersPage(state, action) { state.usersPage = action.payload; },
     setUsersSearch(state, action) { state.usersSearch = action.payload; },
@@ -64,11 +64,11 @@ const adminSlice = createSlice({
     // Rooms
     setRoomsLoading(state, action) { state.roomsLoading = action.payload; },
     setRooms(state, action) {
-      const { content, totalPages, totalElements, number } = action.payload;
+      const { content, totalPages, totalElements, page } = action.payload;
       state.rooms = content;
       state.roomsTotalPages = totalPages;
       state.roomsTotalElements = totalElements;
-      state.roomsPage = number;
+      state.roomsPage = page;
     },
     setRoomsPage(state, action) { state.roomsPage = action.payload; },
     setSelectedRoom(state, action) { state.selectedRoom = action.payload; },
@@ -79,11 +79,11 @@ const adminSlice = createSlice({
     // Messages
     setMessagesLoading(state, action) { state.messagesLoading = action.payload; },
     setMessages(state, action) {
-      const { content, totalPages, totalElements, number } = action.payload;
+      const { content, totalPages, totalElements, page } = action.payload;
       state.messages = content;
       state.messagesTotalPages = totalPages;
       state.messagesTotalElements = totalElements;
-      state.messagesPage = number;
+      state.messagesPage = page;
     },
     setMessagesPage(state, action) { state.messagesPage = action.payload; },
     setMessagesFilter(state, action) {

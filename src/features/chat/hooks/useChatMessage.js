@@ -408,10 +408,6 @@ export const useChatMessage = () => {
           } else {
             socketActions.sendChat(activeChat.name, fileMessage, "room");
           }
-
-          setTimeout(() => {
-            dispatch(addMessage({ ...optimisticFileMessage, status: "sent" }));
-          }, 600);
         } catch (error) {
           console.error("Gửi file thất bại:", error);
           return;
@@ -451,11 +447,6 @@ export const useChatMessage = () => {
         } else {
           socketActions.sendChat(activeChat.name, encodedText, "room");
         }
-
-        // Server không trả Tự động confirm đã gửi sau 600ms
-        setTimeout(() => {
-          dispatch(addMessage({ ...optimisticMessage, status: "sent" }));
-        }, 600);
 
         setInputText("");
       }
@@ -515,11 +506,6 @@ export const useChatMessage = () => {
       } else {
         socketActions.sendChat(activeChat.name, content, "room");
       }
-
-      // Auto confirm, tin server
-      setTimeout(() => {
-        dispatch(addMessage({ ...retryMsg, status: "sent" }));
-      }, 600);
     },
     [activeChat, socketActions, dispatch],
   );

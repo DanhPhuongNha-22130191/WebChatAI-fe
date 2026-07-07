@@ -8,6 +8,7 @@ import {
 } from '../../../state/admin/adminSlice.js';
 import ConfirmModal from './ConfirmModal.jsx';
 import EditUserModal from './EditUserModal.jsx';
+import Pagination from '../../../shared/components/Pagination.jsx';
 import styles from './UsersTab.module.css';
 
 const ROLE_COLOR = { ADMIN: '#6366f1', USER: '#64748b' };
@@ -30,7 +31,7 @@ export default function UsersTab() {
   const load = async (page = usersPage, search = usersSearch) => {
     dispatch(setUsersLoading(true));
     try {
-      const res = await adminSvc.getUsers(page, 20, search);
+      const res = await adminSvc.getUsers(page, 10, search);
       dispatch(setUsers(res?.data || res));
     } catch (err) {
       dispatch(setError(err.message));
@@ -184,29 +185,11 @@ export default function UsersTab() {
       </div>
 
       {/* Pagination */}
-      {usersTotalPages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            className={styles.pageBtn}
-            disabled={usersPage === 0}
-            onClick={() => handlePage(usersPage - 1)}
-          >← Trước</button>
-          {Array.from({ length: usersTotalPages }, (_, i) => (
-            <button
-              key={i}
-              className={`${styles.pageBtn} ${i === usersPage ? styles.pageActive : ''}`}
-              onClick={() => handlePage(i)}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            className={styles.pageBtn}
-            disabled={usersPage >= usersTotalPages - 1}
-            onClick={() => handlePage(usersPage + 1)}
-          >Sau →</button>
-        </div>
-      )}
+      <Pagination
+        page={usersPage}
+        totalPages={usersTotalPages}
+        onPageChange={handlePage}
+      />
 
       {/* Modals */}
       <EditUserModal

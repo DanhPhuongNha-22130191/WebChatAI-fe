@@ -16,6 +16,7 @@ import SearchResult from "../components/sidebar/SearchResult.jsx";
 import ContactRequestModal from "../components/sidebar/ContactRequestModal.jsx";
 import ContactRequestsModal from "../components/sidebar/ContactRequestsModal.jsx";
 import ProfileModal from "../components/sidebar/ProfileModal.jsx";
+import AddFriendModal from "../components/sidebar/AddFriendModal.jsx";
 import { usePendingActions } from "../hooks/usePendingActions";
 import { useChatTheme } from "../hooks/useChatTheme";
 import { useWebRTCCall } from "../hooks/useWebRTCCall.js";
@@ -103,6 +104,36 @@ const ChatPage = () => {
   const [leaveRoomError, setLeaveRoomError] = useState("");
   const [isLeavingRoom, setIsLeavingRoom] = useState(false);
   const [profileTarget, setProfileTarget] = useState(null);
+  const [showAddFriend, setShowAddFriend] = useState(false);
+
+  const handleAddFriend = (username, setErrorCallback, setLoadingCallback) => {
+    const selfUsername = user?.username || user?.user || user?.name || localStorage.getItem("user_name");
+    if (username.toLowerCase() === selfUsername?.toLowerCase()) {
+      setErrorCallback("Không thể kết bạn với chính mình");
+      return;
+    }
+
+    setLoadingCallback(true);
+    setErrorCallback("");
+
+    window.__pendingContactCheck = {
+      username: username,
+      onSuccess: () => {
+        setLoadingCallback(false);
+        setShowAddFriend(false);
+        setContactRecipient(username);
+        setShowContactRequest(true);
+        window.__pendingContactCheck = null;
+      },
+      onError: () => {
+        setLoadingCallback(false);
+        setErrorCallback("Người dùng không tồn tại");
+        window.__pendingContactCheck = null;
+      },
+    };
+
+    socketActions.checkExist(username);
+  };
   
   useEffect(() => {
     if (!user) return;
@@ -328,7 +359,7 @@ const getMemberUsername = (member) => {
   return member?.username || member?.user || member?.name || "";
 };
 
-  const handleSendContactRequest = async (recipientName) => {
+  const handleSendContactRequest = async (recipientName, _message) => {
     try {
      await sendContactRequest(recipientName);
       setShowContactRequest(false);
@@ -627,6 +658,7 @@ const confirmRemoveRoomMember = () => {
               onProfile={handleOpenMyProfile}
               onAdd={handleCreateRoom}
               onContactRequests={handleOpenContactRequests}
+              onAddFriend={() => setShowAddFriend(true)}
               pendingContactCount={pendingContactCount}
             />
             <SearchBox
@@ -744,6 +776,22 @@ const confirmRemoveRoomMember = () => {
             <ContactRequestsModal
               onClose={() => setShowContactRequests(false)}
               onSelectUser={handleSelectContactRequest}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Add Friend Modal */}
+      {showAddFriend && (
+        <>
+          <div
+            className={styles["create-room-modal-backdrop"]}
+            onClick={() => setShowAddFriend(false)}
+          />
+          <div className={styles["create-room-modal-container"]}>
+            <AddFriendModal
+              onClose={() => setShowAddFriend(false)}
+              onAdd={handleAddFriend}
             />
           </div>
         </>

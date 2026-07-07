@@ -7,6 +7,7 @@ import {
   setSelectedRoom, removeRoomFromList, setError,
 } from '../../../state/admin/adminSlice.js';
 import ConfirmModal from './ConfirmModal.jsx';
+import Pagination from '../../../shared/components/Pagination.jsx';
 import styles from './RoomsTab.module.css';
 
 const TYPE_COLOR = { GROUP: '#6366f1', PRIVATE: '#10b981', PUBLIC: '#f59e0b' };
@@ -27,7 +28,7 @@ export default function RoomsTab() {
   const load = async (page = roomsPage) => {
     dispatch(setRoomsLoading(true));
     try {
-      const res = await adminSvc.getRooms(page, 20);
+      const res = await adminSvc.getRooms(page, 10);
       dispatch(setRooms(res?.data || res));
     } catch (err) {
       dispatch(setError(err.message));
@@ -204,15 +205,14 @@ export default function RoomsTab() {
       </div>
 
       {/* Pagination */}
-      {roomsTotalPages > 1 && (
-        <div className={styles.pagination}>
-          <button className={styles.pageBtn} disabled={roomsPage === 0} onClick={() => { dispatch(setRoomsPage(roomsPage - 1)); load(roomsPage - 1); }}>← Trước</button>
-          {Array.from({ length: roomsTotalPages }, (_, i) => (
-            <button key={i} className={`${styles.pageBtn} ${i === roomsPage ? styles.pageActive : ''}`} onClick={() => { dispatch(setRoomsPage(i)); load(i); }}>{i + 1}</button>
-          ))}
-          <button className={styles.pageBtn} disabled={roomsPage >= roomsTotalPages - 1} onClick={() => { dispatch(setRoomsPage(roomsPage + 1)); load(roomsPage + 1); }}>Sau →</button>
-        </div>
-      )}
+      <Pagination
+        page={roomsPage}
+        totalPages={roomsTotalPages}
+        onPageChange={(p) => {
+          dispatch(setRoomsPage(p));
+          load(p);
+        }}
+      />
 
       <ConfirmModal
         isOpen={!!deleteTarget}
