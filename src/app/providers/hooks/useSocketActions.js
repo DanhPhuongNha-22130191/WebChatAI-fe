@@ -133,14 +133,14 @@ leaveRoom: (roomName, newOwnerUsername) => {
         socketActions.updateProfile(socketRef, profile);
       },
 
-      callInvite: (to, callType = "audio", callId) => {
+      callInvite: (to, callType = "audio", callId, meta = {}) => {
         lastActivityRef.current = Date.now();
-        socketActions.callInvite(socketRef, to, callType, callId);
+        socketActions.callInvite(socketRef, to, callType, callId, meta);
       },
 
-      callAccept: (to, callId, callType = "audio") => {
+      callAccept: (to, callId, callType = "audio", meta = {}) => {
         lastActivityRef.current = Date.now();
-        socketActions.callAccept(socketRef, to, callId, callType);
+        socketActions.callAccept(socketRef, to, callId, callType, meta);
       },
 
       callReject: (to, callId, reason, meta = {}) => {
@@ -158,18 +158,18 @@ leaveRoom: (roomName, newOwnerUsername) => {
         socketActions.callEnd(socketRef, to, callId, meta);
       },
 
-      sendWebRTCOffer: (to, callId, offer, callType = "audio") => {
+      sendWebRTCOffer: (to, callId, offer, callType = "audio", meta = {}) => {
         lastActivityRef.current = Date.now();
-        socketActions.sendWebRTCOffer(socketRef, to, callId, offer, callType);
+        socketActions.sendWebRTCOffer(socketRef, to, callId, offer, callType, meta);
       },
 
-      sendWebRTCAnswer: (to, callId, answer, callType = "audio") => {
+      sendWebRTCAnswer: (to, callId, answer, callType = "audio", meta = {}) => {
         lastActivityRef.current = Date.now();
-        socketActions.sendWebRTCAnswer(socketRef, to, callId, answer, callType);
+        socketActions.sendWebRTCAnswer(socketRef, to, callId, answer, callType, meta);
       },
 
-      sendIceCandidate: (to, callId, candidate) => {
-        socketActions.sendIceCandidate(socketRef, to, callId, candidate);
+      sendIceCandidate: (to, callId, candidate, meta = {}) => {
+        socketActions.sendIceCandidate(socketRef, to, callId, candidate, meta);
       },
 
       removeContact: (username) => {

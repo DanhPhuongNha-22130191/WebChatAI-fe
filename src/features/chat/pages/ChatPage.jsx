@@ -604,25 +604,33 @@ const confirmRemoveRoomMember = () => {
 
   const canCallActiveChat =
     activeChat &&
-    (activeChat.type === 0 || activeChat.type === "people") &&
+    activeChat.name &&
     activeChat.name !== currentUsername;
 
   const handleStartVoiceCall = () => {
     if (!canCallActiveChat) {
-      window.alert("Hiện tại chỉ hỗ trợ gọi 1-1 với liên hệ khác.");
+      window.alert("Bạn cần chọn liên hệ hoặc nhóm để gọi.");
       return;
     }
 
-    webRTCCall.startCall(activeChat.name, "audio");
+    webRTCCall.startCall(activeChat.name, "audio", {
+      isGroupCall: isActiveGroup,
+      roomName: isActiveGroup ? activeChat.name : "",
+      chatType: isActiveGroup ? "room" : "people",
+    });
   };
 
   const handleStartVideoCall = () => {
     if (!canCallActiveChat) {
-      window.alert("Hiện tại chỉ hỗ trợ gọi 1-1 với liên hệ khác.");
+      window.alert("Bạn cần chọn liên hệ hoặc nhóm để gọi.");
       return;
     }
 
-    webRTCCall.startCall(activeChat.name, "video");
+    webRTCCall.startCall(activeChat.name, "video", {
+      isGroupCall: isActiveGroup,
+      roomName: isActiveGroup ? activeChat.name : "",
+      chatType: isActiveGroup ? "room" : "people",
+    });
   };
 
   return (
@@ -920,6 +928,8 @@ const confirmRemoveRoomMember = () => {
         callState={webRTCCall.callState}
         localVideoRef={webRTCCall.localVideoRef}
         remoteVideoRef={webRTCCall.remoteVideoRef}
+        localStream={webRTCCall.localStream}
+        peerStreams={webRTCCall.peerStreams}
         isMicOn={webRTCCall.isMicOn}
         isCameraOn={webRTCCall.isCameraOn}
         onAccept={webRTCCall.acceptCall}

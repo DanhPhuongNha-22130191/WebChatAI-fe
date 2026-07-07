@@ -535,6 +535,12 @@ const ChatRoomCard = ({
     "";
 
   const isPeopleChat = activeChat?.type === 0 || activeChat?.type === "people";
+  const isRoomChat =
+    activeChat?.type === 1 ||
+    activeChat?.type === "room" ||
+    activeChat?.type === "group" ||
+    activeChat?.type === "GROUP";
+  const canCallChat = Boolean(activeChat) && (isPeopleChat || isRoomChat);
   const activeChatTitle = getDisplayName(activeChat);
 
   const getSenderDisplayName = (senderName) => {
@@ -1139,9 +1145,9 @@ const ChatRoomCard = ({
           <button
             type="button"
             className={styles.iconButton}
-            title={isPeopleChat ? "Gọi thoại" : "Chỉ hỗ trợ gọi 1-1"}
+            title={isRoomChat ? "Gọi thoại nhóm" : "Gọi thoại"}
             onClick={onVoiceCall}
-            disabled={!isPeopleChat}
+            disabled={!canCallChat}
           >
             <svg
               width="24"
@@ -1160,9 +1166,9 @@ const ChatRoomCard = ({
           <button
             type="button"
             className={styles.iconButton}
-            title={isPeopleChat ? "Gọi video" : "Chỉ hỗ trợ gọi 1-1"}
+            title={isRoomChat ? "Gọi video nhóm" : "Gọi video"}
             onClick={onVideoCall}
-            disabled={!isPeopleChat}
+            disabled={!canCallChat}
           >
             <svg
               width="24"

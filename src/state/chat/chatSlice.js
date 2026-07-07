@@ -650,85 +650,41 @@ const chatSlice = createSlice({
       state.pendingPage = action.payload;
     },
 
-   updateRoomData(state, action) {
-  const {
-    name,
-    userList = [],
-    members = [],
-    own,
-    ownerUsername,
-    currentUserRole,
-    type = 1,
-  } = action.payload || {};
+    updateRoomData(state, action) {
+      const { name, userList = [], own } = action.payload;
 
-  if (!name) return;
+      let finalUserList = [...userList];
 
-  const owner = ownerUsername || own;
-  const rawMembers = userList.length > 0 ? userList : members;
+      if (own) {
+        const ownerExists = finalUserList.some(
+          (user) => (typeof user === "string" ? user : user.name) === own,
+        );
 
-  const finalUserList = rawMembers.map((member) => {
-    if (typeof member === "string") {
-      return {
-        name: member,
-        username: member,
-        role: member === owner ? "OWNER" : "MEMBER",
-        isOwner: member === owner,
-        isDeputy: false,
-      };
-    }
+        if (!ownerExists) {
+          finalUserList.unshift({
+            name: own,
+            isOwner: true,
+          });
+        }
+      }
 
-    const username = member.username || member.user || member.name;
-    const role =
-      username === owner
-        ? "OWNER"
-        : String(
-            member.role || (member.isDeputy ? "DEPUTY" : "MEMBER")
-          ).toUpperCase();
+      const index = state.people.findIndex(
+        (person) => person.name === name && person.type === 1,
+      );
 
-    return {
-      ...member,
-      name: username,
-      username,
-      role,
-      isOwner: role === "OWNER",
-      isDeputy: role === "DEPUTY",
-      own: role === "OWNER",
-    };
-  });
-
-  const index = state.people.findIndex(
-    (person) =>
-      person.name === name &&
-      (person.type === 1 ||
-        person.type === "room" ||
-        person.type === "group")
-  );
-
-  const patch = {
-    name,
-    type: type === "GROUP" ? 1 : type,
-    userList: finalUserList,
-    members: finalUserList,
-    own: owner,
-    ownerUsername: owner,
-  };
-
-  if (currentUserRole !== undefined && currentUserRole !== null) {
-    patch.currentUserRole = currentUserRole;
-  }
-
-  if (index !== -1) {
-    state.people[index] = {
-      ...state.people[index],
-      ...patch,
-    };
-  } else {
-    state.people.unshift({
-      ...patch,
-      actionTime: new Date().toISOString(),
-    });
-  }
-},
+      if (index !== -1) {
+        state.people[index].userList = finalUserList;
+        state.people[index].own = own;
+      } else {
+        state.people.unshift({
+          name,
+          type: 1,
+          userList: finalUserList,
+          own,
+          actionTime: new Date().toISOString(),
+        });
+      }
+    },
 
     setPendingConversations(state, action) {
       state.pendingConversations = action.payload ?? [];
