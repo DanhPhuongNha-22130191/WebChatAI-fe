@@ -23,7 +23,14 @@ const LoginPage = () => {
     useEffect(() => {
         if (user) {
             console.log("Đăng nhập thành công, đang chuyển trang...");
-            navigate("/chat"); // Chuyển sang trang Chat
+            const isAdmin = (
+                user.role === 'ADMIN' ||
+                user.role === 'ROLE_ADMIN' ||
+                user.username === 'admin' ||
+                user.user === 'admin' ||
+                user.name === 'admin'
+            );
+            navigate(isAdmin ? '/admin' : '/chat');
         }
     }, [user, navigate]);
 

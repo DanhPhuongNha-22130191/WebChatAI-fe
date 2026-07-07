@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "../features/auth/pages/LoginPage.jsx";
 import RegisterPage from "../features/auth/pages/RegisterPage.jsx";
 import ChatPage from "../features/chat/pages/ChatPage.jsx";
+import AdminPage from "../features/admin/pages/AdminPage.jsx";
 import colors from "../shared/constants/colors.js";
 import GlobalLoading from "../shared/components/GlobalLoading.jsx";
 
@@ -42,6 +43,7 @@ export default function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/chat" element={<ChatPage />} />
+                    <Route path="/admin" element={<AdminPage />} />
 
                     {/* Fallback */}
                     <Route path="*" element={<Navigate to="/login" replace />} />

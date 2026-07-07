@@ -9,7 +9,7 @@ const LoginHeader = () => {
             marginBottom: 20,
             marginTop: 0
         }}>
-            LangChat - SubeoApp
+            HTTP 200 Chat
         </h2>
     );
 };

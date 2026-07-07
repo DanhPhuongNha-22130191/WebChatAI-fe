@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import colors from '../../../../shared/constants/colors.js';
 import Button from '../../../../shared/components/Button';
 import { getAvatarUrl, getDisplayName } from '../../../../shared/utils/avatarUtils.js';
@@ -13,8 +14,18 @@ const UserHeader = ({
     onContactRequests,
     pendingContactCount = 0
 }) => {
+    const navigate = useNavigate();
     const username = getUsername(user);
     const displayName = getDisplayName(user || name);
+
+    // Kiểm tra quyền admin
+    const isAdmin = user && (
+        user.role === 'ADMIN' ||
+        user.role === 'ROLE_ADMIN' ||
+        user.username === 'admin' ||
+        user.user === 'admin' ||
+        user.name === 'admin'
+    );
 
     return (
         <div style={{
@@ -105,6 +116,39 @@ const UserHeader = ({
                             </span>
                         )}
                     </Button>
+                )}
+
+                {/* Nút Admin Panel — chỉ hiện với admin */}
+                {isAdmin && (
+                    <button
+                        id="go-to-admin-btn"
+                        onClick={() => navigate('/admin')}
+                        title="Vào Admin Panel"
+                        style={{
+                            borderRadius: '50%',
+                            border: `1px solid #6366f1`,
+                            width: 28,
+                            height: 28,
+                            minWidth: 28,
+                            minHeight: 28,
+                            padding: 0,
+                            margin: 0,
+                            cursor: 'pointer',
+                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 14,
+                            lineHeight: 1,
+                            aspectRatio: '1 / 1',
+                            boxShadow: '0 2px 8px rgba(99,102,241,0.4)',
+                            transition: 'transform 0.15s, box-shadow 0.15s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.12)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(99,102,241,0.55)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(99,102,241,0.4)'; }}
+                    >
+                        🛡️
+                    </button>
                 )}
 
                 <button onClick={onAdd} style={{
