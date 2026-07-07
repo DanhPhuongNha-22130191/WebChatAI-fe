@@ -274,7 +274,9 @@ const CallModal = ({
                     alt={peerName}
                     style={styles.avatar}
                   />
+
                   <div style={styles.peerName}>{peerName}</div>
+
                   <div style={{ color: "rgba(255,255,255,0.72)" }}>
                     {statusText}
                   </div>
@@ -289,6 +291,7 @@ const CallModal = ({
                 playsInline
                 style={{ display: "none" }}
               />
+
               <video
                 ref={localVideoRef}
                 autoPlay
@@ -317,7 +320,7 @@ const CallModal = ({
             <>
               <button
                 type="button"
-                onClick={onReject}
+                onClick={() => onReject?.("Từ chối cuộc gọi")}
                 style={{ ...styles.labelButton, background: "#ef3f5f" }}
               >
                 Từ chối
@@ -325,7 +328,7 @@ const CallModal = ({
 
               <button
                 type="button"
-                onClick={onAccept}
+                onClick={() => onAccept?.()}
                 style={{ ...styles.labelButton, background: "#24c36b" }}
               >
                 Nghe máy
@@ -335,7 +338,7 @@ const CallModal = ({
             <>
               <button
                 type="button"
-                onClick={onToggleMic}
+                onClick={() => onToggleMic?.()}
                 title={isMicOn ? "Tắt mic" : "Bật mic"}
                 style={{
                   ...styles.roundButton,
@@ -350,7 +353,7 @@ const CallModal = ({
               {isVideoCall && (
                 <button
                   type="button"
-                  onClick={onToggleCamera}
+                  onClick={() => onToggleCamera?.()}
                   title={isCameraOn ? "Tắt camera" : "Bật camera"}
                   style={{
                     ...styles.roundButton,
@@ -365,7 +368,7 @@ const CallModal = ({
 
               <button
                 type="button"
-                onClick={onEnd}
+                onClick={() => onEnd?.()}
                 title="Kết thúc cuộc gọi"
                 style={{
                   ...styles.roundButton,
