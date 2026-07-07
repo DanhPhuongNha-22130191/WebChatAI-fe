@@ -131,6 +131,7 @@ export function useChatSidebar() {
       const isSelf = x.type === 0 && x.name === title;
 
       return {
+          ...x,
         key: `${x.type}:${x.name}`,
         name: x.name,
         username: x.username || x.name,

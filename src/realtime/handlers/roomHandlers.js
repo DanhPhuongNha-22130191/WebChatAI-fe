@@ -6,15 +6,19 @@ import {
 } from "../../state/chat/chatSlice";
 
 const saveRoomData = (response, dispatch) => {
-    if (!response?.data?.name) {
-        return;
-    }
+  if (!response?.data?.name) {
+    return;
+  }
 
-    dispatch(updateRoomData({
-        name: response.data.name,
-        own: response.data.own,
-        userList: response.data.userList || []
-    }));
+  dispatch(updateRoomData({
+    name: response.data.name,
+    type: response.data.type ?? 1,
+    own: response.data.own ?? response.data.ownerUsername,
+    ownerUsername: response.data.ownerUsername ?? response.data.own,
+    currentUserRole: response.data.currentUserRole,
+    userList: response.data.userList || response.data.members || [],
+    members: response.data.members || response.data.userList || []
+  }));
 };
 
 export const handleCreateRoom = (
@@ -110,6 +114,115 @@ export const handleGetRoomMembers = (response, dispatch) => {
     }
 
     saveRoomData(response, dispatch);
+};
+
+const callPendingRoomAction = (status, message) => {
+  const pendingAction = window.__pendingRoomAction;
+
+  if (!pendingAction) return;
+
+  if (status === "success" && pendingAction.onSuccess) {
+    pendingAction.onSuccess(message);
+  }
+
+  if (status !== "success" && pendingAction.onError) {
+    pendingAction.onError(message);
+  }
+
+  window.__pendingRoomAction = null;
+};
+
+export const handleRoomRoleUpdated = (
+  response,
+  dispatch,
+  socketActions,
+  socketRef
+) => {
+  if (response.status !== "success") {
+    console.error("[Socket] Cập nhật quyền thất bại:", response.mes);
+    callPendingRoomAction(
+      "error",
+      response.mes || "Không thể cập nhật quyền thành viên."
+    );
+    return;
+  }
+
+  saveRoomData(response, dispatch);
+  socketActions.getUserList(socketRef);
+  callPendingRoomAction("success", response.mes || "Đã cập nhật quyền.");
+};
+
+export const handleRemoveRoomMember = (
+  response,
+  dispatch,
+  socketActions,
+  socketRef
+) => {
+  if (response.status !== "success") {
+    console.error("[Socket] Xóa thành viên thất bại:", response.mes);
+    callPendingRoomAction(
+      "error",
+      response.mes || "Không thể xóa thành viên khỏi nhóm."
+    );
+    return;
+  }
+
+  saveRoomData(response, dispatch);
+  socketActions.getUserList(socketRef);
+  callPendingRoomAction("success", response.mes || "Đã xóa thành viên.");
+};
+
+export const handleRoomMemberRemoved = (
+  response,
+  dispatch,
+  socketActions,
+  socketRef
+) => {
+  if (response.status !== "success") return;
+
+  saveRoomData(response, dispatch);
+  socketActions.getUserList(socketRef);
+};
+
+export const handleRemovedFromRoom = (
+  response,
+  dispatch,
+  socketActions,
+  socketRef,
+  getState
+) => {
+  if (response.status !== "success") return;
+
+  const state = getState ? getState() : null;
+  const activeChat = state?.chat?.activeChat;
+  const roomName = response.data?.name;
+
+  if (
+    activeChat &&
+    activeChat.name === roomName &&
+    (
+      activeChat.type === 1 ||
+      activeChat.type === "room" ||
+      activeChat.type === "group"
+    )
+  ) {
+    dispatch(setActiveChat(null));
+    dispatch(clearMessages());
+  }
+
+  socketActions.getUserList(socketRef);
+};
+
+export const handleRoomOwnerChanged = (
+  response,
+  dispatch,
+  socketActions,
+  socketRef
+) => {
+  if (response.status !== "success") return;
+
+  saveRoomData(response, dispatch);
+  socketActions.getUserList(socketRef);
 };
 
 const updateAfterRename = (

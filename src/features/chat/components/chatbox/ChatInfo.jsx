@@ -9,7 +9,18 @@ import ThemeSelectorModal from './ThemeSelectorModal.jsx';
 import SharedMedia from './SharedMedia.jsx';
 import MediaGallery from './MediaGallery';
 
-const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddMember }) => {
+const ChatInfo = ({
+    isGroup = false,
+    members = [],
+    currentUsername = '',
+    currentUserRole = 'MEMBER',
+    onRename,
+    onLeaveRoom,
+    onAddMember,
+    onPromoteDeputy,
+    onDemoteDeputy,
+    onRemoveMember
+}) => {
     const { changeTheme } = useChatTheme();
     const [showThemeSelector, setShowThemeSelector] = useState(false);
     const [viewMode, setViewMode] = useState('MAIN'); // 'MAIN' | 'GALLERY'
@@ -87,14 +98,19 @@ const ChatInfo = ({ isGroup = false, members = [], onRename, onLeaveRoom, onAddM
         />;
     }
 
-    if (viewMode === 'MEMBERS') {
-        return <ListMember
-            members={members}
-            isGroup={isGroup}
-            onAddMember={onAddMember}
-            onClose={() => setViewMode('MAIN')}
-        />;
-    }
+   if (viewMode === 'MEMBERS') {
+    return <ListMember
+        members={members}
+        isGroup={isGroup}
+        currentUsername={currentUsername}
+        currentUserRole={currentUserRole}
+        onAddMember={onAddMember}
+        onPromoteDeputy={onPromoteDeputy}
+        onDemoteDeputy={onDemoteDeputy}
+        onRemoveMember={onRemoveMember}
+        onClose={() => setViewMode('MAIN')}
+    />;
+}
 
     return (
         <div style={{
