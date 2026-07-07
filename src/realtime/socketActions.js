@@ -214,19 +214,25 @@ leaveRoom: (socketRef, roomName, newOwnerUsername) => {
         });
     },
 
-    callInvite: (socketRef, to, callType = "audio", callId) => {
+    callInvite: (socketRef, to, callType = "audio", callId, meta = {}) => {
         sendRawData(socketRef, "CALL_INVITE", {
             to,
             callType,
-            callId
+            callId,
+            isGroupCall: !!meta.isGroupCall,
+            roomName: meta.roomName || "",
+            chatType: meta.chatType || (meta.isGroupCall ? "room" : "people")
         });
     },
 
-    callAccept: (socketRef, to, callId, callType = "audio") => {
+    callAccept: (socketRef, to, callId, callType = "audio", meta = {}) => {
         sendRawData(socketRef, "CALL_ACCEPT", {
             to,
             callId,
-            callType
+            callType,
+            isGroupCall: !!meta.isGroupCall,
+            roomName: meta.roomName || "",
+            chatType: meta.chatType || (meta.isGroupCall ? "room" : "people")
         });
     },
 
@@ -238,7 +244,10 @@ leaveRoom: (socketRef, roomName, newOwnerUsername) => {
             callType: meta.callType || "audio",
             durationSeconds: meta.durationSeconds || 0,
             caller: meta.caller,
-            receiver: meta.receiver
+            receiver: meta.receiver,
+            isGroupCall: !!meta.isGroupCall,
+            roomName: meta.roomName || "",
+            chatType: meta.chatType || (meta.isGroupCall ? "room" : "people")
         });
     },
 
@@ -250,7 +259,10 @@ leaveRoom: (socketRef, roomName, newOwnerUsername) => {
             callType: meta.callType || "audio",
             durationSeconds: meta.durationSeconds || 0,
             caller: meta.caller,
-            receiver: meta.receiver
+            receiver: meta.receiver,
+            isGroupCall: !!meta.isGroupCall,
+            roomName: meta.roomName || "",
+            chatType: meta.chatType || (meta.isGroupCall ? "room" : "people")
         });
     },
 
@@ -262,33 +274,46 @@ leaveRoom: (socketRef, roomName, newOwnerUsername) => {
             callType: meta.callType || "audio",
             durationSeconds: meta.durationSeconds || 0,
             caller: meta.caller,
-            receiver: meta.receiver
+            receiver: meta.receiver,
+            isGroupCall: !!meta.isGroupCall,
+            roomName: meta.roomName || "",
+            chatType: meta.chatType || (meta.isGroupCall ? "room" : "people")
         });
     },
 
-    sendWebRTCOffer: (socketRef, to, callId, offer, callType = "audio") => {
+    sendWebRTCOffer: (socketRef, to, callId, offer, callType = "audio", meta = {}) => {
         sendRawData(socketRef, "WEBRTC_OFFER", {
             to,
             callId,
             callType,
-            offer
+            offer,
+            isGroupCall: !!meta.isGroupCall,
+            roomName: meta.roomName || "",
+            chatType: meta.chatType || (meta.isGroupCall ? "room" : "people")
         });
     },
 
-    sendWebRTCAnswer: (socketRef, to, callId, answer, callType = "audio") => {
+    sendWebRTCAnswer: (socketRef, to, callId, answer, callType = "audio", meta = {}) => {
         sendRawData(socketRef, "WEBRTC_ANSWER", {
             to,
             callId,
             callType,
-            answer
+            answer,
+            isGroupCall: !!meta.isGroupCall,
+            roomName: meta.roomName || "",
+            chatType: meta.chatType || (meta.isGroupCall ? "room" : "people")
         });
     },
 
-    sendIceCandidate: (socketRef, to, callId, candidate) => {
+    sendIceCandidate: (socketRef, to, callId, candidate, meta = {}) => {
         sendRawData(socketRef, "WEBRTC_ICE_CANDIDATE", {
             to,
             callId,
-            candidate
+            candidate,
+            callType: meta.callType || "audio",
+            isGroupCall: !!meta.isGroupCall,
+            roomName: meta.roomName || "",
+            chatType: meta.chatType || (meta.isGroupCall ? "room" : "people")
         });
     },
 

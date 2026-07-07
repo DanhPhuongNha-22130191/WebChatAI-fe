@@ -14,21 +14,31 @@ const IDLE_STATE = {
   callType: "audio",
   direction: null,
   message: "",
+  isGroupCall: false,
+  roomName: "",
 };
+
+const normalizeCallType = (callType) => (callType === "video" ? "video" : "audio");
 
 const getCandidatePayload = (candidate) => {
   if (!candidate) return null;
-
-  if (typeof candidate.toJSON === "function") {
-    return candidate.toJSON();
-  }
-
+  if (typeof candidate.toJSON === "function") return candidate.toJSON();
   return candidate;
 };
 
-const isCallMatch = (state, data) => {
-  if (!state?.callId || !data?.callId) return false;
-  return state.callId === data.callId;
+const getPeerFromSignal = (data, currentUser) => {
+  const from = data?.from || data?.fromUsername || data?.sender;
+  if (from && from !== currentUser) return from;
+
+  const to = data?.to || data?.toUsername || data?.receiver;
+  if (to && to !== currentUser) return to;
+
+  return from || to || "";
+};
+
+const hasTrack = (stream, track) => {
+  if (!stream || !track) return false;
+  return stream.getTracks().some((item) => item.id === track.id);
 };
 
 export const useWebRTCCall = ({ socketActions, currentUser }) => {
@@ -37,13 +47,15 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [localStreamVersion, setLocalStreamVersion] = useState(0);
   const [remoteStreamVersion, setRemoteStreamVersion] = useState(0);
+  const [peerStreams, setPeerStreams] = useState([]);
 
   const stateRef = useRef(callState);
-  const peerConnectionRef = useRef(null);
+  const peerConnectionsRef = useRef(new Map());
+  const pendingIceCandidatesRef = useRef(new Map());
+  const localTracksAddedRef = useRef(new Set());
+  const remoteStreamsRef = useRef(new Map());
   const localStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
-  const pendingIceCandidatesRef = useRef([]);
-  const localTracksAddedRef = useRef(false);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const callTimerRef = useRef(null);
@@ -52,6 +64,16 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
   useEffect(() => {
     stateRef.current = callState;
   }, [callState]);
+
+  const syncPeerStreams = useCallback(() => {
+    const streams = Array.from(remoteStreamsRef.current.entries()).map(
+      ([username, stream]) => ({ username, stream }),
+    );
+
+    setPeerStreams(streams);
+    remoteStreamRef.current = streams[0]?.stream || null;
+    setRemoteStreamVersion((value) => value + 1);
+  }, []);
 
   useEffect(() => {
     if (localVideoRef.current) {
@@ -74,21 +96,41 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
 
   const getCallDurationSeconds = useCallback(() => {
     if (!callConnectedAtRef.current) return 0;
-
     return Math.max(0, Math.floor((Date.now() - callConnectedAtRef.current) / 1000));
   }, []);
 
+  const buildSignalMeta = useCallback((stateOverride = {}) => {
+    const state = { ...stateRef.current, ...stateOverride };
+    return {
+      callType: normalizeCallType(state.callType),
+      isGroupCall: Boolean(state.isGroupCall),
+      roomName: state.roomName || "",
+      chatType: state.isGroupCall ? "room" : "people",
+    };
+  }, []);
+
   const buildCallMeta = useCallback(
-    (state, overrides = {}) => ({
-      callType: state?.callType || "audio",
-      durationSeconds: getCallDurationSeconds(),
-      caller: state?.direction === "incoming" ? state?.peerUsername : currentUser,
-      receiver: state?.direction === "incoming" ? currentUser : state?.peerUsername,
-      ...overrides,
-    }),
+    (state, overrides = {}) => {
+      const isGroupCall = Boolean(state?.isGroupCall);
+      const roomName = state?.roomName || "";
+
+      return {
+        callType: normalizeCallType(state?.callType),
+        durationSeconds: getCallDurationSeconds(),
+        caller: state?.direction === "incoming" ? state?.peerUsername : currentUser,
+        receiver: isGroupCall
+          ? roomName
+          : state?.direction === "incoming"
+            ? currentUser
+            : state?.peerUsername,
+        isGroupCall,
+        roomName,
+        chatType: isGroupCall ? "room" : "people",
+        ...overrides,
+      };
+    },
     [currentUser, getCallDurationSeconds],
   );
-
 
   const stopLocalStream = useCallback(() => {
     if (localStreamRef.current) {
@@ -98,50 +140,68 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
     }
   }, []);
 
-  const closePeerConnection = useCallback(() => {
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.onicecandidate = null;
-      peerConnectionRef.current.ontrack = null;
-      peerConnectionRef.current.onconnectionstatechange = null;
-      peerConnectionRef.current.close();
-      peerConnectionRef.current = null;
-    }
+  const closePeerConnection = useCallback(
+    (peerUsername) => {
+      const peerConnection = peerConnectionsRef.current.get(peerUsername);
 
-    localTracksAddedRef.current = false;
-    pendingIceCandidatesRef.current = [];
-    remoteStreamRef.current = null;
-    setRemoteStreamVersion((value) => value + 1);
-  }, []);
+      if (peerConnection) {
+        peerConnection.onicecandidate = null;
+        peerConnection.ontrack = null;
+        peerConnection.onconnectionstatechange = null;
+        peerConnection.close();
+      }
+
+      peerConnectionsRef.current.delete(peerUsername);
+      pendingIceCandidatesRef.current.delete(peerUsername);
+      localTracksAddedRef.current.delete(peerUsername);
+      remoteStreamsRef.current.delete(peerUsername);
+      syncPeerStreams();
+    },
+    [syncPeerStreams],
+  );
+
+  const closeAllPeerConnections = useCallback(() => {
+    peerConnectionsRef.current.forEach((peerConnection) => {
+      peerConnection.onicecandidate = null;
+      peerConnection.ontrack = null;
+      peerConnection.onconnectionstatechange = null;
+      peerConnection.close();
+    });
+
+    peerConnectionsRef.current.clear();
+    pendingIceCandidatesRef.current.clear();
+    localTracksAddedRef.current.clear();
+    remoteStreamsRef.current.clear();
+    syncPeerStreams();
+  }, [syncPeerStreams]);
 
   const resetCall = useCallback(() => {
     clearCallTimer();
     callConnectedAtRef.current = null;
-    closePeerConnection();
+    closeAllPeerConnections();
     stopLocalStream();
     setIsMicOn(true);
     setIsCameraOn(true);
     setCallState(IDLE_STATE);
-  }, [clearCallTimer, closePeerConnection, stopLocalStream]);
+  }, [clearCallTimer, closeAllPeerConnections, stopLocalStream]);
 
-  const addLocalTracksToPeer = useCallback((peerConnection) => {
-    if (!peerConnection || !localStreamRef.current || localTracksAddedRef.current) {
-      return;
-    }
+  const addLocalTracksToPeer = useCallback((peerUsername, peerConnection) => {
+    if (!peerUsername || !peerConnection || !localStreamRef.current) return;
+    if (localTracksAddedRef.current.has(peerUsername)) return;
 
     localStreamRef.current.getTracks().forEach((track) => {
       peerConnection.addTrack(track, localStreamRef.current);
     });
 
-    localTracksAddedRef.current = true;
+    localTracksAddedRef.current.add(peerUsername);
   }, []);
 
-  const flushPendingIceCandidates = useCallback(async () => {
-    const peerConnection = peerConnectionRef.current;
-
+  const flushPendingIceCandidates = useCallback(async (peerUsername) => {
+    const peerConnection = peerConnectionsRef.current.get(peerUsername);
     if (!peerConnection || !peerConnection.remoteDescription) return;
 
-    const candidates = [...pendingIceCandidatesRef.current];
-    pendingIceCandidatesRef.current = [];
+    const candidates = pendingIceCandidatesRef.current.get(peerUsername) || [];
+    pendingIceCandidatesRef.current.set(peerUsername, []);
 
     for (const candidate of candidates) {
       try {
@@ -154,9 +214,10 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
 
   const createPeerConnection = useCallback(
     (peerUsername, callId) => {
-      if (peerConnectionRef.current) {
-        return peerConnectionRef.current;
-      }
+      if (!peerUsername) return null;
+
+      const existingPeerConnection = peerConnectionsRef.current.get(peerUsername);
+      if (existingPeerConnection) return existingPeerConnection;
 
       const peerConnection = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
@@ -167,22 +228,24 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
           peerUsername,
           callId,
           getCandidatePayload(event.candidate),
+          buildSignalMeta(),
         );
       };
 
       peerConnection.ontrack = (event) => {
-        if (event.streams && event.streams[0]) {
-          remoteStreamRef.current = event.streams[0];
-        } else {
-          if (!remoteStreamRef.current) {
-            remoteStreamRef.current = new MediaStream();
-          }
+        let stream = remoteStreamsRef.current.get(peerUsername);
 
-          remoteStreamRef.current.addTrack(event.track);
+        if (event.streams && event.streams[0]) {
+          stream = event.streams[0];
+        } else {
+          if (!stream) stream = new MediaStream();
+          if (!hasTrack(stream, event.track)) stream.addTrack(event.track);
         }
 
-        setRemoteStreamVersion((value) => value + 1);
+        remoteStreamsRef.current.set(peerUsername, stream);
+        syncPeerStreams();
         clearCallTimer();
+
         if (!callConnectedAtRef.current) {
           callConnectedAtRef.current = Date.now();
         }
@@ -190,7 +253,7 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
         setCallState((previous) => ({
           ...previous,
           status: "connected",
-          message: "Đang trong cuộc gọi",
+          message: previous.isGroupCall ? "Đang trong cuộc gọi nhóm" : "Đang trong cuộc gọi",
         }));
       };
 
@@ -198,10 +261,16 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
         const status = peerConnection.connectionState;
 
         if (status === "connected") {
+          clearCallTimer();
+
+          if (!callConnectedAtRef.current) {
+            callConnectedAtRef.current = Date.now();
+          }
+
           setCallState((previous) => ({
             ...previous,
             status: "connected",
-            message: "Đang trong cuộc gọi",
+            message: previous.isGroupCall ? "Đang trong cuộc gọi nhóm" : "Đang trong cuộc gọi",
           }));
         }
 
@@ -212,29 +281,40 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
           }));
         }
 
-        if (status === "closed") {
-          setCallState(IDLE_STATE);
+        if (["failed", "closed"].includes(status)) {
+          closePeerConnection(peerUsername);
         }
       };
 
-      peerConnectionRef.current = peerConnection;
+      peerConnectionsRef.current.set(peerUsername, peerConnection);
       return peerConnection;
     },
-    [clearCallTimer, socketActions],
+    [buildSignalMeta, clearCallTimer, closePeerConnection, socketActions, syncPeerStreams],
   );
 
   const ensureLocalStream = useCallback(async (callType) => {
+    const normalizedType = normalizeCallType(callType);
+
     if (localStreamRef.current) {
-      return localStreamRef.current;
+      const hasVideo = localStreamRef.current.getVideoTracks().length > 0;
+      if (normalizedType === "audio" || hasVideo) return localStreamRef.current;
+
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = null;
     }
 
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error("Trình duyệt không hỗ trợ microphone/camera.");
     }
 
-    const shouldUseVideo = callType === "video";
+    const shouldUseVideo = normalizedType === "video";
+
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
       video: shouldUseVideo
         ? {
             width: { ideal: 1280 },
@@ -254,25 +334,47 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
 
   const createAndSendOffer = useCallback(
     async (peerUsername, callId, callType = "audio") => {
+      if (!peerUsername || peerUsername === currentUser) return;
+
+      await ensureLocalStream(callType);
+
       const peerConnection = createPeerConnection(peerUsername, callId);
-      addLocalTracksToPeer(peerConnection);
+      if (!peerConnection) return;
+
+      addLocalTracksToPeer(peerUsername, peerConnection);
 
       const offer = await peerConnection.createOffer({
         offerToReceiveAudio: true,
-        offerToReceiveVideo: true,
+        offerToReceiveVideo: normalizeCallType(callType) === "video",
       });
 
       await peerConnection.setLocalDescription(offer);
-      socketActions?.sendWebRTCOffer?.(peerUsername, callId, offer, callType);
+
+      socketActions?.sendWebRTCOffer?.(
+        peerUsername,
+        callId,
+        offer,
+        normalizeCallType(callType),
+        buildSignalMeta({ callType }),
+      );
     },
-    [addLocalTracksToPeer, createPeerConnection, socketActions],
+    [
+      addLocalTracksToPeer,
+      buildSignalMeta,
+      createPeerConnection,
+      currentUser,
+      ensureLocalStream,
+      socketActions,
+    ],
   );
 
   const startCall = useCallback(
-    async (peerUsername, callType = "audio") => {
-      const normalizedType = callType === "video" ? "video" : "audio";
+    async (targetName, callType = "audio", options = {}) => {
+      const normalizedType = normalizeCallType(callType);
+      const isGroupCall = Boolean(options?.isGroupCall || options?.chatType === "room");
+      const roomName = isGroupCall ? options?.roomName || targetName : "";
 
-      if (!peerUsername || !socketActions?.callInvite) return;
+      if (!targetName || !socketActions?.callInvite) return;
 
       if (stateRef.current.status !== "idle") {
         window.alert("Bạn đang có một cuộc gọi khác.");
@@ -282,34 +384,43 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
       try {
         await ensureLocalStream(normalizedType);
 
-        const callId = `${currentUser || "me"}_${peerUsername}_${Date.now()}`;
+        const callId = `${currentUser || "me"}_${targetName}_${Date.now()}`;
 
         setCallState({
           status: "outgoing",
           callId,
-          peerUsername,
+          peerUsername: targetName,
           callType: normalizedType,
           direction: "outgoing",
-          message: "Đang gọi...",
+          message: isGroupCall ? "Đang gọi nhóm..." : "Đang gọi...",
+          isGroupCall,
+          roomName,
         });
 
-        socketActions.callInvite(peerUsername, normalizedType, callId);
+        socketActions.callInvite(targetName, normalizedType, callId, {
+          isGroupCall,
+          roomName,
+          chatType: isGroupCall ? "room" : "people",
+        });
 
         clearCallTimer();
+
         callTimerRef.current = window.setTimeout(() => {
           const latestState = stateRef.current;
 
-          if (latestState.callId !== callId || latestState.status !== "outgoing") {
-            return;
-          }
+          if (latestState.callId !== callId || latestState.status !== "outgoing") return;
 
-          socketActions?.callCancel?.(peerUsername, callId, {
+          socketActions?.callCancel?.(isGroupCall ? roomName : targetName, callId, {
             callType: normalizedType,
             durationSeconds: 0,
             caller: currentUser,
-            receiver: peerUsername,
+            receiver: isGroupCall ? roomName : targetName,
             reason: "Không nghe máy",
+            isGroupCall,
+            roomName,
+            chatType: isGroupCall ? "room" : "people",
           });
+
           resetCall();
         }, CALL_TIMEOUT_MS);
       } catch (error) {
@@ -334,34 +445,49 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
       setCallState((previous) => ({
         ...previous,
         status: "connecting",
-        message: "Đang kết nối...",
+        message: previous.isGroupCall ? "Đang vào cuộc gọi nhóm..." : "Đang kết nối...",
       }));
 
+      const target = currentState.isGroupCall
+        ? currentState.roomName || currentState.peerUsername
+        : currentState.peerUsername;
+
       socketActions?.callAccept?.(
-        currentState.peerUsername,
+        target,
         currentState.callId,
         currentState.callType,
+        buildSignalMeta(currentState),
       );
     } catch (error) {
       console.error("Không thể nhận cuộc gọi:", error);
+
+      const target = currentState.isGroupCall
+        ? currentState.roomName || currentState.peerUsername
+        : currentState.peerUsername;
+
       socketActions?.callReject?.(
-        currentState.peerUsername,
+        target,
         currentState.callId,
         "Không thể mở microphone/camera",
         buildCallMeta(currentState, { durationSeconds: 0 }),
       );
+
       window.alert(error?.message || "Không thể mở microphone/camera.");
       resetCall();
     }
-  }, [buildCallMeta, clearCallTimer, ensureLocalStream, resetCall, socketActions]);
+  }, [buildCallMeta, buildSignalMeta, clearCallTimer, ensureLocalStream, resetCall, socketActions]);
 
   const rejectCall = useCallback(
     (reason = "Từ chối cuộc gọi") => {
       const currentState = stateRef.current;
 
-      if (currentState.peerUsername && currentState.callId) {
+      const target = currentState.isGroupCall
+        ? currentState.roomName || currentState.peerUsername
+        : currentState.peerUsername;
+
+      if (target && currentState.callId) {
         socketActions?.callReject?.(
-          currentState.peerUsername,
+          target,
           currentState.callId,
           reason,
           buildCallMeta(currentState, { durationSeconds: 0 }),
@@ -376,25 +502,29 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
   const endCall = useCallback(() => {
     const currentState = stateRef.current;
 
-    if (currentState.peerUsername && currentState.callId) {
+    const target = currentState.isGroupCall
+      ? currentState.roomName || currentState.peerUsername
+      : currentState.peerUsername;
+
+    if (target && currentState.callId) {
       if (currentState.status === "incoming") {
         socketActions?.callReject?.(
-          currentState.peerUsername,
+          target,
           currentState.callId,
           "Không nghe máy",
           buildCallMeta(currentState, { durationSeconds: 0 }),
         );
       } else if (currentState.status === "outgoing") {
         socketActions?.callCancel?.(
-          currentState.peerUsername,
+          target,
           currentState.callId,
           buildCallMeta(currentState, { durationSeconds: 0, reason: "Không nghe máy" }),
         );
       } else {
         socketActions?.callEnd?.(
-          currentState.peerUsername,
+          target,
           currentState.callId,
-          buildCallMeta(currentState),
+          buildCallMeta(currentState, { reason: "Cuộc gọi đã kết thúc" }),
         );
       }
     }
@@ -407,9 +537,11 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
     if (!audioTracks.length) return;
 
     const nextValue = !audioTracks[0].enabled;
+
     audioTracks.forEach((track) => {
       track.enabled = nextValue;
     });
+
     setIsMicOn(nextValue);
   }, []);
 
@@ -418,9 +550,11 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
     if (!videoTracks.length) return;
 
     const nextValue = !videoTracks[0].enabled;
+
     videoTracks.forEach((track) => {
       track.enabled = nextValue;
     });
+
     setIsCameraOn(nextValue);
   }, []);
 
@@ -434,10 +568,19 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
       if (!eventName) return;
 
       if (response.status === "error") {
-        if (["CALL_INVITE", "CALL_ACCEPT", "WEBRTC_OFFER", "WEBRTC_ANSWER", "WEBRTC_ICE_CANDIDATE"].includes(eventName)) {
+        if (
+          [
+            "CALL_INVITE",
+            "CALL_ACCEPT",
+            "WEBRTC_OFFER",
+            "WEBRTC_ANSWER",
+            "WEBRTC_ICE_CANDIDATE",
+          ].includes(eventName)
+        ) {
           window.alert(response.message || "Cuộc gọi không thể thực hiện.");
           resetCall();
         }
+
         return;
       }
 
@@ -446,17 +589,25 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
           case "CALL_INVITE": {
             if (data.from === currentUser) return;
 
+            const incomingCallType = normalizeCallType(data.callType);
+            const isGroupCall = Boolean(data.isGroupCall || data.roomName || data.chatType === "room");
+            const roomName = data.roomName || (isGroupCall ? data.to : "");
+
             if (currentState.status !== "idle") {
-              socketActions?.callReject?.(data.from, data.callId, "Người dùng đang bận", {
-                callType: data.callType === "video" ? "video" : "audio",
+              const target = isGroupCall ? roomName : data.from;
+
+              socketActions?.callReject?.(target, data.callId, "Người dùng đang bận", {
+                callType: incomingCallType,
                 durationSeconds: 0,
                 caller: data.from,
-                receiver: currentUser,
+                receiver: isGroupCall ? roomName : currentUser,
+                isGroupCall,
+                roomName,
+                chatType: isGroupCall ? "room" : "people",
               });
+
               return;
             }
-
-            const incomingCallType = data.callType === "video" ? "video" : "audio";
 
             setCallState({
               status: "incoming",
@@ -464,32 +615,55 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
               peerUsername: data.from,
               callType: incomingCallType,
               direction: "incoming",
-              message: "Cuộc gọi đến",
+              message: isGroupCall ? `Cuộc gọi nhóm ${roomName || ""}`.trim() : "Cuộc gọi đến",
+              isGroupCall,
+              roomName,
             });
 
             clearCallTimer();
+
             callTimerRef.current = window.setTimeout(() => {
               const latestState = stateRef.current;
+              if (latestState.callId !== data.callId || latestState.status !== "incoming") return;
 
-              if (latestState.callId !== data.callId || latestState.status !== "incoming") {
-                return;
-              }
+              const target = isGroupCall ? roomName : data.from;
 
-              socketActions?.callReject?.(data.from, data.callId, "Không nghe máy", {
+              socketActions?.callReject?.(target, data.callId, "Không nghe máy", {
                 callType: incomingCallType,
                 durationSeconds: 0,
                 caller: data.from,
-                receiver: currentUser,
+                receiver: isGroupCall ? roomName : currentUser,
+                isGroupCall,
+                roomName,
+                chatType: isGroupCall ? "room" : "people",
               });
+
               resetCall();
             }, CALL_TIMEOUT_MS);
+
             break;
           }
 
           case "CALL_ACCEPTED": {
-            if (!isCallMatch(currentState, data)) return;
+            if (!currentState.callId || !data.callId || currentState.callId !== data.callId) return;
+
+            const acceptedPeer = data.from;
+            if (!acceptedPeer || acceptedPeer === currentUser) return;
 
             clearCallTimer();
+
+            if (currentState.isGroupCall) {
+              if (["incoming", "idle", "ending"].includes(currentState.status)) return;
+
+              setCallState((previous) => ({
+                ...previous,
+                status: previous.status === "outgoing" ? "connecting" : previous.status,
+                message: "Đang kết nối cuộc gọi nhóm...",
+              }));
+
+              await createAndSendOffer(acceptedPeer, data.callId, currentState.callType);
+              return;
+            }
 
             setCallState((previous) => ({
               ...previous,
@@ -497,15 +671,30 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
               message: "Đang kết nối...",
             }));
 
-            const acceptedCallType = data.callType === "video" || currentState.callType === "video" ? "video" : "audio";
-            await createAndSendOffer(data.from, data.callId, acceptedCallType);
+            const acceptedCallType =
+              data.callType === "video" || currentState.callType === "video" ? "video" : "audio";
+
+            await createAndSendOffer(acceptedPeer, data.callId, acceptedCallType);
             break;
           }
 
-          case "CALL_REJECTED":
-          case "CALL_CANCELED":
-          case "CALL_ENDED": {
-            if (currentState.callId && data.callId && currentState.callId !== data.callId) {
+          case "CALL_REJECTED": {
+            if (currentState.callId && data.callId && currentState.callId !== data.callId) return;
+
+            if (currentState.isGroupCall) {
+              const rejectedPeer = data.from;
+
+              if (rejectedPeer && rejectedPeer !== currentUser) {
+                closePeerConnection(rejectedPeer);
+              }
+
+              if (currentState.status === "outgoing" && peerConnectionsRef.current.size === 0) {
+                setCallState((previous) => ({
+                  ...previous,
+                  message: `${rejectedPeer || "Một thành viên"} đã từ chối`,
+                }));
+              }
+
               return;
             }
 
@@ -514,10 +703,76 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
             setCallState((previous) => ({
               ...previous,
               status: "ending",
-              message:
-                eventName === "CALL_REJECTED"
-                  ? "Cuộc gọi đã bị từ chối"
-                  : "Cuộc gọi đã kết thúc",
+              message: "Cuộc gọi đã bị từ chối",
+            }));
+
+            window.setTimeout(resetCall, 650);
+            break;
+          }
+
+          case "CALL_CANCELED": {
+            if (currentState.callId && data.callId && currentState.callId !== data.callId) return;
+
+            clearCallTimer();
+
+            setCallState((previous) => ({
+              ...previous,
+              status: "ending",
+              message: "Cuộc gọi đã bị hủy",
+            }));
+
+            window.setTimeout(resetCall, 650);
+            break;
+          }
+
+          case "CALL_ENDED": {
+            if (currentState.callId && data.callId && currentState.callId !== data.callId) return;
+
+            const isGroupCall = Boolean(
+              currentState.isGroupCall || data.isGroupCall || data.roomName || data.chatType === "room",
+            );
+
+            if (isGroupCall) {
+              const leavingPeer = getPeerFromSignal(data, currentUser);
+
+              if (leavingPeer && leavingPeer !== currentUser) {
+                closePeerConnection(leavingPeer);
+              }
+
+              const remainingPeerCount = peerConnectionsRef.current.size;
+
+              if (remainingPeerCount > 0) {
+                clearCallTimer();
+
+                setCallState((previous) => ({
+                  ...previous,
+                  status: previous.status === "idle" ? "idle" : "connected",
+                  message: leavingPeer
+                    ? `${leavingPeer} đã rời cuộc gọi nhóm`
+                    : "Một thành viên đã rời cuộc gọi nhóm",
+                }));
+
+                return;
+              }
+
+              clearCallTimer();
+
+              setCallState((previous) => ({
+                ...previous,
+                status: "ending",
+                message: "Cuộc gọi nhóm đã kết thúc",
+              }));
+
+              window.setTimeout(resetCall, 650);
+              break;
+            }
+
+            clearCallTimer();
+
+            setCallState((previous) => ({
+              ...previous,
+              status: "ending",
+              message: "Cuộc gọi đã kết thúc",
             }));
 
             window.setTimeout(resetCall, 650);
@@ -526,62 +781,88 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
 
           case "WEBRTC_OFFER": {
             if (!data.offer || data.from === currentUser) return;
+            if (currentState.callId && data.callId && currentState.callId !== data.callId) return;
 
-            if (currentState.callId && data.callId && currentState.callId !== data.callId) {
-              return;
-            }
+            const peerUsername = getPeerFromSignal(data, currentUser);
+            if (!peerUsername || peerUsername === currentUser) return;
 
             const callType = data.callType === "video" || currentState.callType === "video" ? "video" : "audio";
+            const isGroupCall = Boolean(data.isGroupCall || data.roomName || currentState.isGroupCall);
+            const roomName = data.roomName || currentState.roomName || "";
+
             await ensureLocalStream(callType);
 
-            setCallState({
+            setCallState((previous) => ({
+              ...previous,
               status: "connecting",
               callId: data.callId,
-              peerUsername: data.from,
+              peerUsername: previous.peerUsername || peerUsername,
               callType,
-              direction: currentState.direction || "incoming",
-              message: "Đang kết nối...",
-            });
+              direction: previous.direction || "incoming",
+              message: isGroupCall ? "Đang kết nối cuộc gọi nhóm..." : "Đang kết nối...",
+              isGroupCall,
+              roomName,
+            }));
 
-            const peerConnection = createPeerConnection(data.from, data.callId);
-            addLocalTracksToPeer(peerConnection);
+            const peerConnection = createPeerConnection(peerUsername, data.callId);
+            if (!peerConnection) return;
+
+            addLocalTracksToPeer(peerUsername, peerConnection);
+
             await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-            await flushPendingIceCandidates();
+            await flushPendingIceCandidates(peerUsername);
 
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
-            socketActions?.sendWebRTCAnswer?.(data.from, data.callId, answer, callType);
+
+            socketActions?.sendWebRTCAnswer?.(peerUsername, data.callId, answer, callType, {
+              callType,
+              isGroupCall,
+              roomName,
+              chatType: isGroupCall ? "room" : "people",
+            });
+
             break;
           }
 
           case "WEBRTC_ANSWER": {
-            if (!data.answer || !isCallMatch(currentState, data)) return;
+            if (!data.answer || !currentState.callId || currentState.callId !== data.callId) return;
 
-            const peerConnection = peerConnectionRef.current;
+            const peerUsername = getPeerFromSignal(data, currentUser);
+            const peerConnection = peerConnectionsRef.current.get(peerUsername);
             if (!peerConnection) return;
 
             await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-            await flushPendingIceCandidates();
+            await flushPendingIceCandidates(peerUsername);
+
+            clearCallTimer();
+
+            if (!callConnectedAtRef.current) {
+              callConnectedAtRef.current = Date.now();
+            }
 
             setCallState((previous) => ({
               ...previous,
               status: "connected",
-              message: "Đang trong cuộc gọi",
+              message: previous.isGroupCall ? "Đang trong cuộc gọi nhóm" : "Đang trong cuộc gọi",
             }));
+
             break;
           }
 
           case "WEBRTC_ICE_CANDIDATE": {
             if (!data.candidate) return;
+            if (currentState.callId && data.callId && currentState.callId !== data.callId) return;
 
-            if (currentState.callId && data.callId && currentState.callId !== data.callId) {
-              return;
-            }
+            const peerUsername = getPeerFromSignal(data, currentUser);
+            if (!peerUsername || peerUsername === currentUser) return;
 
-            const peerConnection = peerConnectionRef.current;
+            const peerConnection = peerConnectionsRef.current.get(peerUsername);
 
             if (!peerConnection || !peerConnection.remoteDescription) {
-              pendingIceCandidatesRef.current.push(data.candidate);
+              const candidates = pendingIceCandidatesRef.current.get(peerUsername) || [];
+              candidates.push(data.candidate);
+              pendingIceCandidatesRef.current.set(peerUsername, candidates);
               return;
             }
 
@@ -600,10 +881,14 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
     };
 
     window.addEventListener("webrtc-call-signal", handleCallSignal);
-    return () => window.removeEventListener("webrtc-call-signal", handleCallSignal);
+
+    return () => {
+      window.removeEventListener("webrtc-call-signal", handleCallSignal);
+    };
   }, [
     addLocalTracksToPeer,
     clearCallTimer,
+    closePeerConnection,
     createAndSendOffer,
     createPeerConnection,
     currentUser,
@@ -615,15 +900,18 @@ export const useWebRTCCall = ({ socketActions, currentUser }) => {
 
   useEffect(() => {
     return () => {
-      closePeerConnection();
+      closeAllPeerConnections();
       stopLocalStream();
     };
-  }, [closePeerConnection, stopLocalStream]);
+  }, [closeAllPeerConnections, stopLocalStream]);
 
   return {
     callState,
     localVideoRef,
     remoteVideoRef,
+    localStream: localStreamRef.current,
+    remoteStream: remoteStreamRef.current,
+    peerStreams,
     isMicOn,
     isCameraOn,
     startCall,
