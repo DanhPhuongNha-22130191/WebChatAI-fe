@@ -467,6 +467,14 @@
     text-decoration: underline;
 }
 
+.errorReason {
+    display: block;
+    max-width: 240px;
+    margin-top: 3px;
+    color: #d83258;
+    line-height: 1.35;
+}
+
 /* ==========================
    MENU / THU HỒI / CHỈNH SỬA
    ========================== */

@@ -21,6 +21,27 @@ import {
 } from "../../../../shared/utils/stickerUtils";
 import StickerPicker from "./StickerPicker";
 const reactionEmojis = ["👍", "❤️", "😂", "😮", "😢", "😡"];
+const getModerationLabel = (flag) => {
+  switch (String(flag).toLowerCase()) {
+    case 'toxic':
+    case 'severe_toxic':
+      return 'Thô tục nặng';
+    case 'obscene':
+    case 'profanity':
+      return 'Thô tục';
+    case 'insult':
+      return 'Xúc phạm/Lăng mạ';
+    case 'identity_hate':
+      return 'Kỳ thị/Căm ghét';
+    case 'threat':
+    case 'violence':
+      return 'Đe dọa/Bạo lực';
+    case 'spam':
+      return 'Spam/Quảng cáo';
+    default:
+      return null;
+  }
+};
 import ChatSummaryModal from './ChatSummaryModal.jsx';
 
 const modalStyles = {
@@ -1332,8 +1353,6 @@ const ChatRoomCard = ({
                               •••
                             </button>
 
-                            <div className={styles.menuDivider} />
-
                             {openMenuId === message.id && (
                               <div className={styles.messageMenuDropdown}>
                                 {canEdit && (
@@ -1520,13 +1539,42 @@ const ChatRoomCard = ({
                             <span>Đang gửi</span>
                           )}
                           {message.status === "error" && (
-                            <button
-                              type="button"
-                              className={styles.retryButton}
-                              onClick={() => onRetry?.(message)}
-                            >
-                              Lỗi · Gửi lại
-                            </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, marginTop: 4 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: '500' }}>
+                                  {message.errorMessage || "Không thể gửi tin nhắn"}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => onRetry?.(message)}
+                                  style={{
+                                    border: 'none', background: 'transparent',
+                                    color: '#2B87FF', fontWeight: '600', fontSize: '11px',
+                                    cursor: 'pointer', padding: 0, textDecoration: 'underline'
+                                  }}
+                                >
+                                  Gửi lại
+                                </button>
+                              </div>
+                              {Array.isArray(message.moderationFlags) && message.moderationFlags.length > 0 && (
+                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                  {message.moderationFlags.map(flag => {
+                                    const label = getModerationLabel(flag);
+                                    if (!label) return null;
+                                    return (
+                                      <span key={flag} style={{
+                                        background: '#fee2e2', color: '#ef4444',
+                                        fontSize: '9px', fontWeight: 'bold',
+                                        padding: '1px 5px', borderRadius: '4px',
+                                        border: '1px solid rgba(239, 68, 68, 0.15)'
+                                      }}>
+                                        {label}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
                           )}
                           {(message.status === "sent" || !message.status) &&
                             isLastSent && <span>Đã gửi</span>}

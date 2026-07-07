@@ -20,7 +20,14 @@ const LoginForm = () => {
     // Tự động chuyển trang khi login thành công
     useEffect(() => {
         if (user) {
-            navigate("/chat");
+            const isAdmin = (
+                user.role === 'ADMIN' ||
+                user.role === 'ROLE_ADMIN' ||
+                user.username === 'admin' ||
+                user.user === 'admin' ||
+                user.name === 'admin'
+            );
+            navigate(isAdmin ? '/admin' : '/chat');
         }
     }, [user, navigate]);
 

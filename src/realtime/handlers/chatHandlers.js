@@ -11,6 +11,7 @@ import {
   reactMessageInState,
   setTypingState,
   updateSidebar,
+  failPendingMessage,
 } from "../../state/chat/chatSlice";
 
 
@@ -75,6 +76,14 @@ export const handleSendChat = (
 
   if (response.status !== "success" && response.status !== true) {
     console.error("SEND_CHAT thất bại:", response.mes || response);
+
+    dispatch(
+      failPendingMessage({
+        ...(response.data || {}),
+        message: response.mes || "Tin nhắn không hợp lệ nên không thể gửi.",
+      }),
+    );
+
     return;
   }
 

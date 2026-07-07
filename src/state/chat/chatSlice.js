@@ -379,7 +379,7 @@ const chatSlice = createSlice({
 
         state.people.splice(index, 1);
         state.people.unshift(updatedItem);
-      } else {
+      } else if (targetType === 1 || targetType === "room" || targetType === "group") {
         state.people.unshift({
           name: targetName,
           type: targetType,
@@ -434,6 +434,45 @@ const chatSlice = createSlice({
         };
       } else {
         state.messages[pendingMessageIndex].status = "sent";
+      }
+    },
+
+    failPendingMessage(state, action) {
+      const failure = action.payload || {};
+      const activeChat = state.activeChat;
+
+      if (!activeChat) {
+        return;
+      }
+
+      for (let index = state.messages.length - 1; index >= 0; index -= 1) {
+        const message = state.messages[index];
+
+        if (message.status !== "sending") {
+          continue;
+        }
+
+        const sameTarget =
+          message.to === activeChat.name ||
+          message.receiver === activeChat.name ||
+          (activeChat.type !== 1 && message.name === activeChat.name);
+
+        if (!sameTarget) {
+          continue;
+        }
+
+        state.messages[index] = {
+          ...message,
+          status: "error",
+          errorMessage:
+            failure.message ||
+            failure.mes ||
+            "Tin nhắn không hợp lệ nên không thể gửi.",
+          moderationRejected: failure.rejected === true,
+          moderationReason: failure.reason,
+          moderationFlags: failure.flags || [],
+        };
+        return;
       }
     },
 
@@ -703,6 +742,7 @@ export const {
   setPendingConversations,
   removePendingConversation,
   confirmPendingMessage,
+  failPendingMessage,
   recallMessageInState,
   editMessageInState,
   updateMessageStatus,

@@ -44,7 +44,7 @@ import {
 
 import { handleCallSignal } from "./handlers/callHandlers";
 
-import { setActiveChat, clearMessages } from "../state/chat/chatSlice";
+import { setActiveChat, clearMessages, setPendingConversations, removePendingConversation } from "../state/chat/chatSlice";
 
 export const handleSocketMessage = (
   response,
@@ -223,7 +223,45 @@ case "ROOM_OWNER_CHANGED":
     case "REACT_MESSAGE":
       handleReactMessage(response, dispatch);
       break;
-      case "REMOVE_CONTACT":
+
+    case "CONTACT_REQUEST_RECEIVED":
+      {
+        const data = response.data || {};
+        const pendingList = getState().chat.pendingConversations || [];
+        const alreadyExists = pendingList.some(item => item.id === data.id);
+        if (!alreadyExists && data.id) {
+          const newPending = {
+            id: data.id,
+            username: data.fromUsername,
+            fromUsername: data.fromUsername,
+            toUsername: data.toUsername,
+            status: data.status,
+            createdAt: data.createdAt,
+          };
+          dispatch(setPendingConversations([...pendingList, newPending]));
+        }
+      }
+      break;
+
+    case "CONTACT_REQUEST_ACCEPTED":
+      {
+        const data = response.data || {};
+        dispatch(removePendingConversation({ username: data.fromUsername }));
+        dispatch(removePendingConversation({ username: data.toUsername }));
+        socketActions.getUserList(socketRef);
+      }
+      break;
+
+    case "CONTACT_REQUEST_DELETED":
+      {
+        const data = response.data || {};
+        dispatch(removePendingConversation({ username: data.fromUsername }));
+        dispatch(removePendingConversation({ username: data.toUsername }));
+        socketActions.getUserList(socketRef);
+      }
+      break;
+
+    case "REMOVE_CONTACT":
 case "CONTACT_REMOVED":
     socketActions.getUserList(socketRef);
 

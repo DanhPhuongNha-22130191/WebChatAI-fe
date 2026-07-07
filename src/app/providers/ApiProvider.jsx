@@ -179,6 +179,45 @@ export const ApiProvider = ({ children }) => {
         },
 
         /**
+         * PATCH request
+         */
+        patch: async (endpoint, data = null, options = {}) => {
+          const url = getApiUrl(endpoint);
+
+          const response = await fetch(url, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+              ...options.headers,
+            },
+            body: data ? JSON.stringify(data) : undefined,
+            ...options,
+          });
+
+          const text = await response.text();
+          let result = null;
+          try {
+            result = text ? JSON.parse(text) : null;
+          } catch {
+            result = text;
+          }
+
+          if (!response.ok) {
+            console.error("API Error:", response.status, url, result);
+            throw new Error(
+              result?.mes ||
+                result?.message ||
+                result?.error ||
+                result ||
+                `HTTP ${response.status}`,
+            );
+          }
+
+          return result;
+        },
+
+        /**
          * DELETE request
          */
         delete: async (endpoint, options = {}) => {

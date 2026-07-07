@@ -1,0 +1,195 @@
+/* Import Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+.layout {
+  position: relative;
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #000; /* Background is black under the Iridescence animation */
+}
+
+.layoutContent {
+  display: flex;
+  flex: 1;
+  height: 100%;
+  width: 100%;
+  padding: 1rem;
+  gap: 1rem;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  height: 100%;
+}
+
+/* ─── Top bar ────────────────────────────────────────────────── */
+.topbar {
+  height: 60px;
+  min-height: 60px;
+  background: rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  gap: 16px;
+}
+
+.topbarLeft { display: flex; align-items: center; }
+.topbarRight { display: flex; align-items: center; gap: 14px; }
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.sep { color: rgba(255, 255, 255, 0.4); }
+.breadcrumbActive {
+  color: var(--theme-primary, var(--text-primary, #7A003C));
+  font-weight: 700;
+}
+
+.errorBanner {
+  background: rgba(254, 242, 242, 0.9);
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  color: #dc2626;
+  font-weight: 500;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userPill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px 5px 6px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50px;
+  cursor: default;
+}
+
+.userPillAvatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--theme-gradient, linear-gradient(135deg, var(--gradient-start, #FFB2CD) 0%, var(--gradient-end, #FF5BCB) 100%));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.userPillInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.userPillName {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--theme-primary, var(--text-primary, #7A003C));
+  line-height: 1;
+}
+
+.userPillRole {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--theme-primary, var(--text-primary, #7A003C));
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Content area ───────────────────────────────────────────── */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  background: transparent;
+}
+
+/* ─── Unauthorized ───────────────────────────────────────────── */
+.unauthorized {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  font-family: 'Inter', sans-serif;
+}
+
+.unauthorizedCard {
+  background: #fff;
+  border-radius: 24px;
+  padding: 52px 48px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+  max-width: 420px;
+}
+
+.unauthorizedIcon {
+  font-size: 56px;
+  margin-bottom: 20px;
+}
+
+.unauthorizedCard h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 12px;
+}
+
+.unauthorizedCard p {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 28px;
+}
+
+.backBtn {
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+  transition: all 0.15s;
+  font-family: 'Inter', sans-serif;
+}
+
+.backBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(99,102,241,0.45);
+}
