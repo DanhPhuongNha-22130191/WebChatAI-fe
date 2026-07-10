@@ -64,7 +64,7 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }) {
           </svg>
         </div>
         <div>
-          <div className={styles.logoTitle}>HTTP 200<span>Chat</span></div>
+          <div className={styles.logoTitle}>Web Chat <span>Application</span></div>
           <div className={styles.logoSub}>Admin Panel</div>
         </div>
       </div>

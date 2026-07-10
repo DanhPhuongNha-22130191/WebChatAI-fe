@@ -9,7 +9,7 @@ const RegisterHeader = () => {
             marginBottom: 20,
             marginTop: 0
         }}>
-            HTTP 200 Chat
+            Web Chat Application
         </h2>
     );
 };
