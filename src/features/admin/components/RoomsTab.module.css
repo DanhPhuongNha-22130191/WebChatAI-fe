@@ -1,6 +1,6 @@
 .wrap {
   padding: 32px 36px;
-  overflow-y: auto;
+  overflow: hidden;
   height: 100%;
   box-sizing: border-box;
   display: flex;
@@ -59,11 +59,11 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 16px;
-  overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  overflow-x: auto;
+  overflow: auto;
   flex: 1;
+  min-height: 0;
 }
 
 .table { width: 100%; border-collapse: collapse; }

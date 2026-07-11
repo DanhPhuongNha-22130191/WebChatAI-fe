@@ -31,9 +31,31 @@ export default function AdminPage() {
     user.name === 'admin'
   );
 
+  const hasCode = localStorage.getItem("re_login_code") || sessionStorage.getItem("re_login_code");
+
+  if (!user && hasCode) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: '#000',
+        color: '#fff',
+        fontFamily: "'Inter', sans-serif"
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ fontWeight: 700, marginBottom: '8px' }}>Đang khôi phục phiên làm việc...</h2>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>Vui lòng đợi trong giây lát</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user || !isAdmin) {
     return <Navigate to="/login" replace />;
   }
+
 
   const renderTab = () => {
     switch (activeTab) {
